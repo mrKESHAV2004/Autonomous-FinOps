@@ -1,0 +1,8 @@
+{
+  "training_date": "2026-01-19T11:20:09.630388",
+  "data_source": "../focus_data_table.csv.gz",
+  "records_analyzed": 2133,
+  "zombie_count": 45,
+  "total_waste": 325.9299880665,
+  "forecast_total": 294.1484909057617
+}

@@ -1,0 +1,20 @@
+{
+  "training_date": "2026-01-20T14:49:44.596697",
+  "data_source": "../focus_data_table.csv.gz",
+  "records_analyzed": 2133,
+  "zombie_count": 85,
+  "total_waste": 455.9229547865,
+  "waste_percentage": 36.413742937549515,
+  "forecast_total": 315.1777153015137,
+  "forecast_metrics": {
+    "train_mae": 0.5825466771958551,
+    "val_mae": 0.5744634674962052,
+    "train_rmse": 0.7238154313456967,
+    "val_rmse": 0.7071224541335038,
+    "forecast_mean": 45.025390625,
+    "forecast_std": 4.185949802398682,
+    "forecast_cv": 0.09296865016222
+  },
+  "feature_importance": null,
+  "model_version": "optimized_v3"
+}

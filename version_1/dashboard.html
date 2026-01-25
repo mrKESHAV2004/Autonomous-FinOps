@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinOps Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #4F46E5;
+            --success-color: #059669;
+            --danger-color: #DC2626;
+            --warning-color: #D97706;
+            --info-color: #0891B2;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            margin-top: 30px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #3730A3 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 0 0 20px 20px;
+            margin-bottom: 2rem;
+        }
+        
+        .metric-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 100%;
+            border: none;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+        }
+        
+        .metric-card.primary {
+            border-left: 5px solid var(--primary-color);
+        }
+        
+        .metric-card.success {
+            border-left: 5px solid var(--success-color);
+        }
+        
+        .metric-card.danger {
+            border-left: 5px solid var(--danger-color);
+        }
+        
+        .metric-card.warning {
+            border-left: 5px solid var(--warning-color);
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 800;
+            margin: 0.5rem 0;
+        }
+        
+        .metric-label {
+            font-size: 0.9rem;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        
+        .insight-card {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .confidence-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .confidence-high { background: var(--danger-color); color: white; }
+        .confidence-medium { background: var(--warning-color); color: white; }
+        .confidence-low { background: var(--info-color); color: white; }
+        
+        .recommendation-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid;
+        }
+        
+        .priority-high { border-left-color: var(--danger-color); }
+        .priority-medium { border-left-color: var(--warning-color); }
+        .priority-low { border-left-color: var(--info-color); }
+        
+        .plot-container {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            color: #6b7280;
+            font-weight: 600;
+        }
+        
+        .nav-tabs .nav-link.active {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+        }
+        
+        .table-hover tbody tr:hover {
+            background-color: rgba(79, 70, 229, 0.05);
+        }
+        
+        .savings-highlight {
+            background: linear-gradient(135deg, var(--success-color) 0%, #047857 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: center;
+            margin: 1rem 0;
+        }
+        
+        .glossary-term {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container main-container">
+        <!-- Header -->
+        <div class="dashboard-header text-center">
+            <h1 class="display-5 fw-bold mb-3">
+                <i class="bi bi-graph-up-arrow"></i> Autonomous FinOps Engine
+            </h1>
+            <p class="lead mb-4">AI-powered cloud cost optimization & waste detection</p>
+            <a href="/" class="btn btn-light btn-lg">
+                <i class="bi bi-upload"></i> Analyze New Dataset
+            </a>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="metric-card primary">
+                    <div class="metric-label">
+                        <i class="bi bi-cash-stack me-2"></i>Total Spend
+                    </div>
+                    <div class="metric-value">{{ results.total_spend }}</div>
+                    <small class="text-muted">Across {{ results.period_days }} days</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="metric-card danger">
+                    <div class="metric-label">
+                        <i class="bi bi-robot me-2"></i>Zombie Waste
+                    </div>
+                    <div class="metric-value">{{ results.zombie_waste }}</div>
+                    <small class="text-muted">{{ results.zombie_count }} resources</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="metric-card warning">
+                    <div class="metric-label">
+                        <i class="bi bi-pie-chart me-2"></i>Waste Share
+                    </div>
+                    <div class="metric-value">{{ results.zombie_pct_of_total }}</div>
+                    <small class="text-muted">Of historical spend</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="metric-card success">
+                    <div class="metric-label">
+                        <i class="bi bi-currency-dollar me-2"></i>Potential Savings
+                    </div>
+                    <div class="metric-value">{{ results.savings }}</div>
+                    <small class="text-muted">Next 7 days</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Insights & Recommendations -->
+        <div class="insight-card mb-4">
+            <h4 class="fw-bold mb-3">
+                <i class="bi bi-lightbulb text-warning me-2"></i>Key Insights
+            </h4>
+            <h5 class="text-danger fw-bold mb-2">{{ results.insight_headline }}</h5>
+            <div class="row">
+                {% for detail in results.insight_detail %}
+                <div class="col-md-4 mb-2">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        <span>{{ detail }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recommendations -->
+        {% if results.recommendations %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="plot-container">
+                    <h4 class="fw-bold mb-3">
+                        <i class="bi bi-list-check text-primary me-2"></i>Actionable Recommendations
+                    </h4>
+                    <div class="row">
+                        {% for rec in results.recommendations %}
+                        <div class="col-md-6 mb-3">
+                            <div class="recommendation-card priority-{{ rec.priority }}">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="fw-bold mb-0">{{ rec.title }}</h6>
+                                    <span class="badge bg-{{ rec.priority }}">{{ rec.priority|upper }}</span>
+                                </div>
+                                <p class="text-muted small mb-2">{{ rec.description }}</p>
+                                <p class="mb-0"><strong>Action:</strong> {{ rec.action }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Visualizations -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="plot-container">
+                    <h4 class="fw-bold mb-3">
+                        <i class="bi bi-bar-chart text-primary me-2"></i>Cost Projection Analysis
+                    </h4>
+                    <div class="text-center">
+                        <img src="data:image/png;base64,{{ results.plots.forecast_plot }}" class="img-fluid rounded" style="max-height: 500px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            {% if results.plots.zombie_analysis %}
+            <div class="col-md-6">
+                <div class="plot-container h-100">
+                    <h4 class="fw-bold mb-3">
+                        <i class="bi bi-tools text-danger me-2"></i>Waste Distribution
+                    </h4>
+                    <img src="data:image/png;base64,{{ results.plots.zombie_analysis }}" class="img-fluid rounded">
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if results.plots.trend_analysis %}
+            <div class="col-md-6">
+                <div class="plot-container h-100">
+                    <h4 class="fw-bold mb-3">
+                        <i class="bi bi-activity text-success me-2"></i>Trend Analysis
+                    </h4>
+                    <img src="data:image/png;base64,{{ results.plots.trend_analysis }}" class="img-fluid rounded">
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Detailed Analysis -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="plot-container h-100">
+                    <h4 class="fw-bold mb-3">
+                        <i class="bi bi-shield-check text-primary me-2"></i>Detection Confidence
+                    </h4>
+                    <div class="row text-center">
+                        {% for level, count in results.confidence_summary.items() %}
+                        <div class="col-md-4 mb-3">
+                            <div class="p-3 rounded bg-light">
+                                <div class="confidence-badge confidence-{{ level|lower }} mb-2">{{ level }}</div>
+                                <div class="h4 fw-bold">{{ count }}</div>
+                                <small class="text-muted">Resources</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="plot-container h-100">
+                    <h4 class="fw-bold mb-3">
+                        <i class="bi bi-distribute-vertical text-warning me-2"></i>Top Waste Categories
+                    </h4>
+                    <div class="table-responsive">
+                        {{ results.waste_distribution | safe }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Zombie Resources -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="plot-container">
+                    <h4 class="fw-bold mb-3">
+                        <i class="bi bi-search text-danger me-2"></i>Detected Zombie Resources
+                    </h4>
+                    <div class="table-responsive" style="align-items: center;text-align: center;">
+                        {{ results.zombies_preview | safe }}
+                    </div>
+                    {% if results.zombie_count > 10 %}
+                    <div class="text-center mt-3">
+                        <small class="text-muted">Showing top 10 of {{ results.zombie_count }} zombie resources</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Savings Summary -->
+        <div class="savings-highlight">
+            <h4 class="fw-bold mb-2">
+                <i class="bi bi-currency-dollar me-2"></i>Total Savings Opportunity
+            </h4>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="h2 fw-bold">7-Day: {{ results.savings }}</div>
+                    <small>Immediate savings</small>
+                </div>
+                <div class="col-md-4">
+                    <div class="h2 fw-bold">
+                        {% set monthly_savings = results.savings|replace('$','')|replace(',','')|float * 30/7 %}
+                        ${{ "%.2f"|format(monthly_savings) }}
+                    </div>
+                    <small>Monthly potential</small>
+                </div>
+                <div class="col-md-4">
+                    <div class="h2 fw-bold">{{ results.savings_pct_vs_bau }}</div>
+                    <small>Spend reduction</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Glossary -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="plot-container">
+                    <h4 class="fw-bold mb-3">
+                        <i class="bi bi-book text-primary me-2"></i>FinOps Glossary
+                    </h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl class="mb-0">
+                                <dt class="glossary-term">Zombie Waste</dt>
+                                <dd>Spend on resources that show anomalous cost vs. usage patterns, indicating idle or over-provisioned assets.</dd>
+                                
+                                <dt class="glossary-term">BAU Forecast</dt>
+                                <dd>Business-as-usual projection assuming current patterns continue without intervention.</dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <dl class="mb-0">
+                                <dt class="glossary-term">Optimized Forecast</dt>
+                                <dd>Projected costs after implementing zombie waste removal recommendations.</dd>
+                                
+                                <dt class="glossary-term">Confidence Level</dt>
+                                <dd>AI model's certainty in zombie detection (High/Medium/Low).</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center py-4 mt-4 border-top">
+            <p class="text-muted mb-0">
+                <i class="bi bi-lightning-charge-fill text-warning me-1"></i>
+                Powered by AI/ML | Updated {{ now.strftime('%Y-%m-%d %H:%M') if now else '' }}
+            </p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Add animation to metric cards
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.metric-card');
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html>
