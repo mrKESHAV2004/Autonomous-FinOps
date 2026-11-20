@@ -1,0 +1,61 @@
+{
+  "avg_daily_cost": "$7.76",
+  "avg_daily_zombie": "$3.70",
+  "confidence_summary": {
+    "High": 15,
+    "Low": 24,
+    "Medium": 11
+  },
+  "forecast_bau": "$50.81",
+  "forecast_opt": "$25.09",
+  "insight_detail": [
+    "Analyzed 427 records spanning 30 days",
+    "Detected 50 potential zombie resources",
+    "Identified $26 in 7-day savings opportunity"
+  ],
+  "insight_headline": "AI-Powered Cloud Waste Analysis Complete",
+  "period_days": 30,
+  "plot_keys": [
+    "main_plot",
+    "zombie_analysis"
+  ],
+  "recommendations": [
+    {
+      "action": "Immediate review recommended",
+      "description": "47.7% of total spend is potentially wasteful.",
+      "icon": "bi-exclamation-triangle",
+      "priority": "high",
+      "title": "CRITICAL: Waste Level Detected"
+    },
+    {
+      "action": "Start optimization with Compute resources",
+      "description": "Accounts for $75.48 of total waste.",
+      "icon": "bi-funnel",
+      "priority": "high",
+      "title": "Focus Area: Compute"
+    },
+    {
+      "action": "Implement recommendations within 48 hours",
+      "description": "$26 in 7 days ($110 monthly).",
+      "icon": "bi-cash-coin",
+      "priority": "high",
+      "title": "Significant Savings Potential"
+    },
+    {
+      "action": "Review high confidence items first",
+      "description": "15 resources with high confidence of being wasteful.",
+      "icon": "bi-shield-check",
+      "priority": "medium",
+      "title": "High Confidence Detections"
+    }
+  ],
+  "savings": "$25.72",
+  "savings_pct_vs_bau": "50.6%",
+  "total_records": 427,
+  "total_spend": "$232.83",
+  "waste_distribution": "<table border=\"1\" class=\"dataframe table table-sm table-hover\">\n  <thead>\n    <tr>\n      <th>ServiceCategory</th>\n      <th></th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <th>Compute</th>\n      <td>$75.48</td>\n    </tr>\n    <tr>\n      <th>Databases</th>\n      <td>$29.99</td>\n    </tr>\n    <tr>\n      <th>Storage</th>\n      <td>$2.00</td>\n    </tr>\n    <tr>\n      <th>Other</th>\n      <td>$1.38</td>\n    </tr>\n    <tr>\n      <th>Web</th>\n      <td>$1.00</td>\n    </tr>\n  </tbody>\n</table>",
+  "zombie_count": "50",
+  "zombie_pct_of_total": "47.7%",
+  "zombie_waste": "$111.02",
+  "zombies_preview": "<table border=\"1\" class=\"dataframe table table-striped table-hover align-middle\">\n  <thead>\n    <tr style=\"text-align: right;\">\n      <th>UsageDate</th>\n      <th>ServiceCategory</th>\n      <th>EffectiveCost</th>\n      <th>confidence</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>2024-09-01</td>\n      <td>Compute</td>\n      <td>$1.91</td>\n      <td>High</td>\n    </tr>\n    <tr>\n      <td>2024-09-01</td>\n      <td>Compute</td>\n      <td>$0.66</td>\n      <td>Low</td>\n    </tr>\n    <tr>\n      <td>2024-09-03</td>\n      <td>Compute</td>\n      <td>$0.98</td>\n      <td>High</td>\n    </tr>\n    <tr>\n      <td>2024-09-05</td>\n      <td>AI and Machine Learning</td>\n      <td>$0.01</td>\n      <td>Medium</td>\n    </tr>\n    <tr>\n      <td>2024-09-06</td>\n      <td>Databases</td>\n      <td>$0.48</td>\n      <td>Low</td>\n    </tr>\n    <tr>\n      <td>2024-09-06</td>\n      <td>Web</td>\n      <td>$1.00</td>\n      <td>Low</td>\n    </tr>\n    <tr>\n      <td>2024-09-06</td>\n      <td>Compute</td>\n      <td>$0.48</td>\n      <td>High</td>\n    </tr>\n    <tr>\n      <td>2024-09-07</td>\n      <td>Compute</td>\n      <td>$3.00</td>\n      <td>High</td>\n    </tr>\n    <tr>\n      <td>2024-09-07</td>\n      <td>Databases</td>\n      <td>$17.54</td>\n      <td>Low</td>\n    </tr>\n    <tr>\n      <td>2024-09-07</td>\n      <td>Compute</td>\n      <td>$0.60</td>\n      <td>Low</td>\n    </tr>\n  </tbody>\n</table>"
+}
