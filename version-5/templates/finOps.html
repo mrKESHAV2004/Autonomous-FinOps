@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autonomous FinOps Architecture: FOCUS Integration & ML Pipelines</title>
+    <meta name="description" content="Technical monograph on evolving FinOps with machine learning for cloud cost optimization.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        :root {
+            --lime: #deff9a;
+            --bg: #0a0a0a;
+            --card-bg: rgba(18, 18, 18, 0.8);
+            --border: rgba(222, 255, 154, 0.2);
+        }
+
+        body {
+            background-color: var(--bg);
+            color: #f5f5f5;
+            font-family: 'Urbanist', sans-serif;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Background Effects */
+        .bg-glow {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                radial-gradient(circle at 80% 20%, rgba(222, 255, 154, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.05) 0%, transparent 40%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .grid-lines {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: linear-gradient(var(--border) 1px, transparent 1px),
+                              linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 60px 60px;
+            opacity: 0.1;
+            z-index: -1;
+        }
+
+        /* UI Elements */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .glass-card:hover {
+            border-color: var(--lime);
+            box-shadow: 0 0 30px rgba(222, 255, 154, 0.1);
+            transform: translateY(-5px);
+        }
+
+        .text-glow {
+            text-shadow: 0 0 20px rgba(222, 255, 154, 0.4);
+        }
+
+        .btn-lime {
+            background-color: var(--lime);
+            color: #000;
+            padding: 12px 28px;
+            border-radius: 99px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-lime:hover {
+            box-shadow: 0 0 25px var(--lime);
+            transform: scale(1.05);
+        }
+
+        /* Connecting Lines for Flowchart */
+        .flow-connector {
+            position: relative;
+        }
+        .flow-connector::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: -2rem;
+            width: 2rem;
+            height: 2px;
+            background: var(--border);
+            z-index: 0;
+        }
+        @media (max-width: 768px) {
+            .flow-connector::after {
+                top: 100%;
+                left: 50%;
+                right: auto;
+                width: 2px;
+                height: 2rem;
+                transform: translateX(-50%);
+            }
+        }
+
+        /* Chart Animations */
+        .chart-bar {
+            transform-origin: bottom;
+            animation: growUp 1.5s ease-out forwards;
+        }
+
+        @keyframes growUp {
+            from { transform: scaleY(0); }
+            to { transform: scaleY(1); }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--lime); }
+    </style>
+</head>
+<body>
+
+    <div class="bg-glow"></div>
+    <div class="grid-lines"></div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 px-8 py-6 flex justify-between items-center backdrop-blur-md border-b border-white/5">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-[#deff9a] rounded-lg flex items-center justify-center text-black">
+                <i class="fa-solid fa-bolt-lightning text-xl" aria-label="Lightning Bolt Icon"></i>
+            </div>
+            <span class="text-xl font-extrabold tracking-tighter uppercase">FinOps.AI</span>
+        </div>
+        <div class="hidden md:flex items-center gap-10 text-sm font-bold uppercase tracking-widest text-white/60">
+            <a href="#vision" class="hover:text-[#deff9a] transition-colors">Vision</a>
+            <a href="#pipeline" class="hover:text-[#deff9a] transition-colors">Pipeline</a>
+            <a href="#data-foundation" class="hover:text-[#deff9a] transition-colors">Data Foundation</a>
+            <a href="#schema-analysis" class="hover:text-[#deff9a] transition-colors">Schema</a>
+            <a href="#logic" class="hover:text-[#deff9a] transition-colors">ML Core</a>
+            <a href="#dashboard" class="hover:text-[#deff9a] transition-colors">Dashboard</a>
+        </div>
+        <a href="/upload" class="btn-lime text-xs">LAUNCH SYSTEM</a>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="vision" class="min-h-screen flex flex-col items-center justify-center pt-20 px-6 text-center">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#deff9a]/30 bg-[#deff9a]/5 text-[#deff9a] text-xs font-bold uppercase tracking-widest mb-8">
+            <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#deff9a] opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-[#deff9a]"></span>
+            </span>
+            Focus 1.0 Ready
+        </div>
+        <h1 class="text-6xl md:text-8xl font-extrabold tracking-tighter mb-8 leading-[0.9]">
+            AUTONOMOUS <br> <span class="text-[#deff9a] text-glow">FINOPS</span> ARCH
+        </h1>
+        <p class="max-w-2xl text-xl text-white/50 mb-12 font-medium">
+            Standardizing millions of hyperscale billing items—often millions of line items per month—into actionable intelligence using FOCUS 1.0 and custom-trained LSTM neural networks for zombie resource detection and cost forecasting.
+        </p>
+        <div class="flex flex-col md:flex-row gap-6">
+            <a href="#pipeline" class="btn-lime">EXPLORE PIPELINE</a>
+            <button class="px-8 py-4 rounded-full border border-white/10 hover:bg-white/5 transition-all font-bold">VIEW MONOGRAPH</button>
+        </div>
+    </section>
+
+    <!-- The Pipeline / Flowchart -->
+    <section id="pipeline" class="py-32 px-6 max-w-7xl mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-end mb-20">
+            <div>
+                <h2 class="text-4xl font-extrabold mb-4 uppercase tracking-tight">The Data <span class="text-[#deff9a]">Continuum</span></h2>
+                <p class="text-white/40 max-w-lg">
+                    From raw telemetry to financial strategy. We utilize AWS "Data Exports" for server-side conversion, ensuring strict schema enforcement before machine learning ingestion.
+                </p>
+            </div>
+            <div class="text-right mt-6 md:mt-0">
+                <div class="inline-block text-right">
+                    <span class="block font-mono text-[#deff9a] text-xs uppercase mb-1">Processing Mode</span>
+                    <span class="text-white font-bold">Strict Compatibility (No x_ columns)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- HTML Flowchart Replacement -->
+        <div class="relative">
+            <!-- Mobile/Desktop Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-8 md:gap-12 relative z-10">
+                
+                <!-- Node 1 -->
+                <div class="flow-connector">
+                    <div class="glass-card p-8 h-full flex flex-col items-center text-center border-t-4 border-t-[#deff9a]">
+                        <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-[#deff9a] mb-6 text-3xl shadow-lg shadow-[#deff9a]/10">
+                            <i class="fa-brands fa-aws" aria-label="AWS Icon"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-white mb-2">Native Export</h4>
+                        <p class="text-xs text-white/40 leading-relaxed">
+                            Server-side conversion engine. Maps legacy lineItem/UnblendedCost to FOCUS BilledCost, enforcing schema with no x_ columns for strict compatibility.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Node 2 -->
+                <div class="flow-connector">
+                    <div class="glass-card p-8 h-full flex flex-col items-center text-center border-t-4 border-t-blue-500">
+                        <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-blue-400 mb-6 text-2xl shadow-lg shadow-blue-500/10">
+                            <i class="fa-solid fa-table-columns" aria-label="Table Columns Icon"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-white mb-2">FOCUS Schema</h4>
+                        <p class="text-xs text-white/40 leading-relaxed">
+                            Strict nullability constraints. Enforces categorical stability on <code>RegionId</code> and <code>ServiceCategory</code>.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Node 3 -->
+                <div class="flow-connector">
+                    <div class="glass-card p-8 h-full flex flex-col items-center text-center border-t-4 border-t-purple-500">
+                        <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-purple-400 mb-6 text-2xl shadow-lg shadow-purple-500/10">
+                            <i class="fa-solid fa-microchip" aria-label="Function Icon"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-white mb-2">Feature Engine</h4>
+                        <p class="text-xs text-white/40 leading-relaxed">
+                            Applies <code>np.log1p</code> normalization and Z-Score scaling. Computes <code>CostUsageInteraction</code> terms.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Node 4 -->
+                <div class="flow-connector">
+                    <div class="glass-card p-8 h-full flex flex-col items-center text-center border-t-4 border-t-red-500">
+                        <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-red-400 mb-6 text-2xl shadow-lg shadow-red-500/10">
+                            <i class="fa-solid fa-brain" aria-label="Brain Icon"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-white mb-2">On-Demand ML</h4>
+                        <p class="text-xs text-white/40 leading-relaxed">
+                            Retrains Isolation Forest & LSTM per session to prevent Concept Drift and ensure context specificity.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Node 5: New Open Source Conversion -->
+                <div>
+                    <div class="glass-card p-8 h-full flex flex-col items-center text-center border-t-4 border-t-green-500">
+                        <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-green-400 mb-6 text-2xl shadow-lg shadow-green-500/10">
+                            <i class="fa-solid fa-code-branch" aria-label="Code Branch Icon"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-white mb-2">Open Source Fallback</h4>
+                        <p class="text-xs text-white/40 leading-relaxed">
+                            Uses focus-converter for historical CUR to FOCUS transformation via YAML rules.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+            
+            <!-- Background connecting line for desktop -->
+            <div class="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-gradient-to-r from-[#deff9a]/0 via-[#deff9a]/20 to-[#deff9a]/0 -translate-y-1/2 z-0"></div>
+        </div>
+    </section>
+
+    <!-- New Section: Data Foundation -->
+    <section id="data-foundation" class="py-32 px-6 max-w-7xl mx-auto">
+        <h2 class="text-4xl font-extrabold uppercase mb-4">The Data <span class="text-[#deff9a]">Foundation</span>: FOCUS Modernization</h2>
+        <p class="text-white/40 mb-12">FOCUS resolves interoperability by mandating vendor-agnostic schemas, enabling ML generalization across CSPs. As detailed in Section 2.1.1.</p>
+        <div class="grid md:grid-cols-2 gap-8">
+            <div class="glass-card p-8">
+                <h3 class="text-xl font-bold mb-4">Structural Advantages</h3>
+                <ul class="space-y-4 text-white/60">
+                    <li>1. Dimensional Uniformity: Fixed schema reduces curse of dimensionality.</li>
+                    <li>2. Metric Clarity: EffectiveCost for smoothed forecasting vs. BilledCost variance.</li>
+                    <li>3. Strict Nullability: Minimizes imputation overhead.</li>
+                </ul>
+            </div>
+            <div class="glass-card p-8">
+                <h3 class="text-xl font-bold mb-4">Transformation Mechanism</h3>
+                <p class="text-white/60">From AWS CUR to FOCUS via server-side exports or focus-converter tool for historical data.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- New Section: Schema Analysis -->
+    <section id="schema-analysis" class="py-32 bg-white/5">
+        <div class="max-w-7xl mx-auto px-6">
+            <h2 class="text-4xl font-extrabold uppercase mb-4">Detailed Schema <span class="text-[#deff9a]">Analysis</span></h2>
+            <p class="text-white/40 mb-8">Key FOCUS columns from focus_sample.csv and their ML roles. As detailed in Section 2.3.</p>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-white/60">
+                    <thead class="bg-white/5">
+                        <tr>
+                            <th class="px-6 py-3">FOCUS Column</th>
+                            <th class="px-6 py-3">Legacy AWS Equivalent</th>
+                            <th class="px-6 py-3">Role in ml.py</th>
+                            <th class="px-6 py-3">Signal Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b border-white/5">
+                            <td class="px-6 py-4">EffectiveCost</td>
+                            <td class="px-6 py-4">savingsPlan/SavingsPlanEffectiveCost</td>
+                            <td class="px-6 py-4">Target Variable</td>
+                            <td class="px-6 py-4">Represents true liability, smoothing out RI purchases. Critical for LSTM stability.</td>
+                        </tr>
+                        <tr class="border-b border-white/5">
+                            <td class="px-6 py-4">ConsumedQuantity</td>
+                            <td class="px-6 py-4">lineItem/UsageAmount</td>
+                            <td class="px-6 py-4">Feature</td>
+                            <td class="px-6 py-4">The primary metric for "Zombie" detection. Low quantity + High cost = Anomaly.</td>
+                        </tr>
+                        <tr class="border-b border-white/5">
+                            <td class="px-6 py-4">ResourceId</td>
+                            <td class="px-6 py-4">lineItem/ResourceId</td>
+                            <td class="px-6 py-4">Identifier</td>
+                            <td class="px-6 py-4">Used to group aggregations and tag specific outputs in the recommendation engine.</td>
+                        </tr>
+                        <tr class="border-b border-white/5">
+                            <td class="px-6 py-4">ServiceCategory</td>
+                            <td class="px-6 py-4">product/servicecode (mapped)</td>
+                            <td class="px-6 py-4">Segmentation</td>
+                            <td class="px-6 py-4">Used to split analysis (e.g., identifying that Storage waste is higher than Compute waste).</td>
+                        </tr>
+                        <tr class="border-b border-white/5">
+                            <td class="px-6 py-4">RegionId</td>
+                            <td class="px-6 py-4">product/region</td>
+                            <td class="px-6 py-4">Feature</td>
+                            <td class="px-6 py-4">Provides geographic context; cost variances across regions can be legitimate or anomalous.</td>
+                        </tr>
+                        <tr class="border-b border-white/5">
+                            <td class="px-6 py-4">PricingCategory</td>
+                            <td class="px-6 py-4">lineItem/LineItemType</td>
+                            <td class="px-6 py-4">Filter</td>
+                            <td class="px-6 py-4">Allows the model to distinguish "Usage" from "Tax" or "Support" fees.</td>
+                        </tr>
+                        <tr class="border-b border-white/5">
+                            <td class="px-6 py-4">BillingPeriodStart</td>
+                            <td class="px-6 py-4">bill/BillingPeriodStartDate</td>
+                            <td class="px-6 py-4">Index</td>
+                            <td class="px-6 py-4">The temporal anchor for the time-series forecasting.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-12 glass-card p-8">
+                <h3 class="text-xl font-bold mb-4">Deep Dive into Data Rows</h3>
+                <ul class="space-y-4 text-white/60">
+                    <li>Row 1 (Amazon SQS): Micro-transaction; log1p handles near-zero costs.</li>
+                    <li>Row 2 (ELB): Semantic unit consistency simplifies encoding.</li>
+                    <li>Row 7 (EBS): Classic zombie if unattached.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ML Core / The Brain -->
+    <section id="logic" class="py-32 bg-white/5">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid md:grid-cols-2 gap-20 items-start">
+                <div>
+                    <div class="inline-block px-3 py-1 mb-6 border border-[#deff9a]/30 rounded text-[#deff9a] text-[10px] font-mono tracking-widest uppercase">
+                        Core Architecture: ml.py
+                    </div>
+                    <h2 class="text-5xl font-extrabold mb-8 leading-tight">THE ALGORITHMIC <br> <span class="text-[#deff9a]">ENGINE</span></h2>
+                    <p class="text-white/60 mb-10 leading-relaxed">
+                        Financial time-series data is notoriously non-stationary. Our architecture utilizes a dual-engine approach, leveraging <strong>Huber Loss</strong> to remain resilient against billing shocks (like RI purchases) that typically derail standard MSE regressions.
+                    </p>
+                    
+                    <div class="space-y-6">
+                        <!-- Card 1 -->
+                        <div class="flex gap-6 p-6 glass-card group">
+                            <div class="w-12 h-12 rounded-lg bg-[#deff9a] flex items-center justify-center text-black flex-shrink-0 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-tree" aria-label="Tree Icon"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg mb-1 group-hover:text-[#deff9a] transition-colors">Isolation Forest (Anomaly)</h4>
+                                <p class="text-sm text-white/40 mb-2">Unsupervised detection of "Zombie Resources".</p>
+                                <div class="flex gap-2">
+                                    <span class="px-2 py-0.5 bg-white/10 rounded text-[10px] font-mono">n_estimators=200</span>
+                                    <span class="px-2 py-0.5 bg-white/10 rounded text-[10px] font-mono">Interaction Terms</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 2 -->
+                        <div class="flex gap-6 p-6 glass-card border-[#deff9a]/40 bg-[#deff9a]/5 group">
+                            <div class="w-12 h-12 rounded-lg bg-[#deff9a] flex items-center justify-center text-black flex-shrink-0 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-network-wired" aria-label="Network Wired Icon"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg mb-1 group-hover:text-[#deff9a] transition-colors">Sequential LSTM (Forecast)</h4>
+                                <p class="text-sm text-white/40 mb-2">Deep learning for time-series extrapolation.</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <span class="px-2 py-0.5 bg-black/40 rounded text-[10px] font-mono text-[#deff9a]">64 Units</span>
+                                    <span class="px-2 py-0.5 bg-black/40 rounded text-[10px] font-mono text-red-400">Dropout</span>
+                                    <span class="px-2 py-0.5 bg-black/40 rounded text-[10px] font-mono text-[#deff9a]">32 Units</span>
+                                    <span class="px-2 py-0.5 bg-black/40 rounded text-[10px] font-mono text-blue-400">Huber Loss</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- New Card 3: DataPreprocessor -->
+                        <div class="flex gap-6 p-6 glass-card group">
+                            <div class="w-12 h-12 rounded-lg bg-[#deff9a] flex items-center justify-center text-black flex-shrink-0 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-gears" aria-label="Gears Icon"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg mb-1 group-hover:text-[#deff9a] transition-colors">DataPreprocessor (Section 3.1)</h4>
+                                <p class="text-sm text-white/40 mb-2">Feature engineering for power-law distributions and seasonality.</p>
+                                <div class="flex gap-2">
+                                    <span class="px-2 py-0.5 bg-white/10 rounded text-[10px] font-mono">np.log1p</span>
+                                    <span class="px-2 py-0.5 bg-white/10 rounded text-[10px] font-mono">Z-Score Scaling</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative top-10">
+                    <div class="absolute -top-10 -right-10 w-40 h-40 bg-[#deff9a]/20 blur-3xl"></div>
+                    <div class="glass-card p-8 font-mono text-xs leading-loose border-l-4 border-l-[#deff9a]">
+                        <div class="text-white/30 mb-6 border-b border-white/10 pb-4 flex justify-between items-center">
+                            <span class="flex items-center gap-2"><i class="fa-brands fa-python" aria-label="Python Icon"></i> ml.py</span>
+                            <span class="text-[#deff9a] text-[10px]">VER 2.4.1</span>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <!-- Feature Engineering Block -->
+                            <div>
+                                <p class="text-slate-500 mb-1"># 1. Logarithmic Normalization & Interaction</p>
+                                <p>
+                                    <span class="text-blue-400">def</span> <span class="text-yellow-400">engineer_features</span>(df):<br>
+                                    &nbsp;&nbsp;df[<span class="text-green-400">'LogCost'</span>] = np.<span class="text-blue-300">log1p</span>(df[<span class="text-green-400">'EffectiveCost'</span>])<br>
+                                    &nbsp;&nbsp;df[<span class="text-green-400">'ZombieSignal'</span>] = df[<span class="text-green-400">'LogCost'</span>] * df[<span class="text-green-400">'LogUsage'</span>]<br>
+                                    &nbsp;&nbsp;<span class="text-purple-400">return</span> StandardScaler().fit_transform(df)
+                                </p>
+                            </div>
+
+                            <!-- LSTM Architecture Block -->
+                            <div class="pt-4 border-t border-white/5">
+                                <p class="text-slate-500 mb-1"># 2. LSTM Architecture (Section 3.3.1)</p>
+                                <p>
+                                    model = <span class="text-yellow-400">Sequential</span>([<br>
+                                    &nbsp;&nbsp;<span class="text-yellow-400">LSTM</span>(<span class="text-orange-400">64</span>, return_sequences=<span class="text-blue-400">True</span>, input_shape=shape),<br>
+                                    &nbsp;&nbsp;<span class="text-yellow-400">Dropout</span>(<span class="text-orange-400">0.2</span>), <span class="text-slate-500"># Prevent overfitting</span><br>
+                                    &nbsp;&nbsp;<span class="text-yellow-400">LSTM</span>(<span class="text-orange-400">32</span>, return_sequences=<span class="text-blue-400">False</span>),<br>
+                                    &nbsp;&nbsp;<span class="text-yellow-400">Dense</span>(<span class="text-orange-400">1</span>) <span class="text-slate-500"># Scalar Forecast</span><br>
+                                    ])<br>
+                                    model.<span class="text-blue-300">compile</span>(loss=<span class="text-green-400">'huber_loss'</span>, optimizer=<span class="text-green-400">'adam'</span>)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard UI Resemblance -->
+    <section id="dashboard" class="py-32 px-6 max-w-7xl mx-auto">
+        <div class="text-center mb-20">
+            <h2 class="text-4xl font-extrabold uppercase mb-4">Command <span class="text-[#deff9a]">Center</span></h2>
+            <p class="text-white/40">Translating probabilistic outputs into actionable business intelligence.</p>
+        </div>
+
+        <div class="glass-card p-8 bg-black/40">
+            <!-- Metric Bar -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+                <div class="p-6 border-r border-white/5">
+                    <p class="text-[10px] uppercase font-bold text-white/30 tracking-widest mb-2">Daily Run Rate</p>
+                    <div class="text-3xl font-extrabold text-[#deff9a]">$4,821.12</div>
+                    <p class="text-[10px] text-green-500 mt-1"><i class="fa-solid fa-arrow-trend-down mr-1" aria-label="Arrow Trend Down Icon"></i> -4.2% Efficiency Gain</p>
+                </div>
+                <div class="p-6 border-r border-white/5">
+                    <p class="text-[10px] uppercase font-bold text-white/30 tracking-widest mb-2">Zombie Waste</p>
+                    <div class="text-3xl font-extrabold text-red-500">$712.44</div>
+                    <p class="text-[10px] text-white/40 mt-1">12 Detected Instances (from Isolation Forest anomalies)</p>
+                </div>
+                <div class="p-6 border-r border-white/5">
+                    <p class="text-[10px] uppercase font-bold text-white/30 tracking-widest mb-2">System Confidence</p>
+                    <div class="text-3xl font-extrabold">98.4%</div>
+                    <div class="w-full h-1 bg-white/5 mt-3 rounded-full overflow-hidden">
+                        <div class="w-[98%] h-full bg-[#deff9a]"></div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <p class="text-[10px] uppercase font-bold text-white/30 tracking-widest mb-2">Potential Savings</p>
+                    <div class="text-3xl font-extrabold text-blue-400">$21,440</div>
+                    <p class="text-[10px] text-white/40 mt-1">Projected Monthly</p>
+                </div>
+            </div>
+
+            <!-- Visualization Area -->
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="md:col-span-2 p-8 bg-white/5 rounded-2xl border border-white/5">
+                    <div class="flex justify-between items-center mb-8">
+                        <h4 class="font-bold text-sm tracking-widest uppercase">90-Day Spend Trajectory</h4>
+                        <div class="flex gap-4">
+                            <span class="flex items-center gap-2 text-[10px]"><div class="w-2 h-2 rounded-full bg-[#deff9a]"></div> Actual</span>
+                            <span class="flex items-center gap-2 text-[10px]"><div class="w-2 h-2 rounded-full bg-blue-500"></div> Forecast</span>
+                        </div>
+                    </div>
+                    
+                    <div class="h-64 flex items-end justify-between gap-1">
+                        <!-- Chart Bars (Mock) -->
+                        <div class="chart-bar flex-1 bg-white/10 h-[40%] rounded-t"></div>
+                        <div class="chart-bar flex-1 bg-white/10 h-[45%] rounded-t"></div>
+                        <div class="chart-bar flex-1 bg-white/10 h-[38%] rounded-t"></div>
+                        <div class="chart-bar flex-1 bg-[#deff9a] h-[55%] rounded-t shadow-[0_0_15px_rgba(222,255,154,0.3)]"></div>
+                        <div class="chart-bar flex-1 bg-[#deff9a] h-[62%] rounded-t shadow-[0_0_15px_rgba(222,255,154,0.3)]"></div>
+                        <div class="chart-bar flex-1 bg-white/10 h-[42%] rounded-t"></div>
+                        <div class="chart-bar flex-1 bg-white/10 h-[35%] rounded-t"></div>
+                        <div class="chart-bar flex-1 bg-white/10 h-[48%] rounded-t"></div>
+                        <div class="chart-bar flex-1 bg-blue-500 h-[30%] rounded-t opacity-50"></div>
+                        <div class="chart-bar flex-1 bg-blue-500 h-[28%] rounded-t opacity-40"></div>
+                        <div class="chart-bar flex-1 bg-blue-500 h-[25%] rounded-t opacity-30"></div>
+                    </div>
+                    <div class="flex justify-between mt-4 text-[10px] text-white/20 font-mono">
+                        <span>OCT</span><span>NOV</span><span>DEC</span><span>JAN</span><span>FEB</span>
+                    </div>
+                </div>
+
+                <div class="p-8 bg-white/5 rounded-2xl border border-white/5">
+                    <h4 class="font-bold text-sm tracking-widest uppercase mb-8">Triage Feed</h4>
+                    <div class="space-y-6">
+                        <div class="flex gap-4 border-b border-white/5 pb-4">
+                            <div class="text-red-500 text-lg"><i class="fa-solid fa-triangle-exclamation" aria-label="Triangle Exclamation Icon"></i></div>
+                            <div>
+                                <p class="text-xs font-bold">Unattached EBS Volume (Row 7: 0.0013888889 GB-Months, ResourceId implied low usage)</p>
+                                <p class="text-[10px] text-white/30">Region: us-east-1 | Cost: $42.50/mo</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 border-b border-white/5 pb-4">
+                            <div class="text-orange-500 text-lg"><i class="fa-solid fa-circle-info" aria-label="Circle Info Icon"></i></div>
+                            <div>
+                                <p class="text-xs font-bold">RDS Scaling Anomaly</p>
+                                <p class="text-[10px] text-white/30">Detected high variance in provisioned IOPS.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="text-green-500 text-lg"><i class="fa-solid fa-check-double" aria-label="Check Double Icon"></i></div>
+                            <div>
+                                <p class="text-xs font-bold">Savings Plan Optimized</p>
+                                <p class="text-[10px] text-white/30">Compute coverage at 92%.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-20 border-t border-white/5 text-center px-6">
+        <div class="flex items-center justify-center gap-3 mb-8">
+            <div class="w-8 h-8 bg-white/5 rounded flex items-center justify-center text-[#deff9a]">
+                <i class="fa-solid fa-bolt-lightning" aria-label="Lightning Bolt Icon"></i>
+            </div>
+            <span class="font-bold tracking-widest uppercase text-sm">FinOps Monograph V1.0</span>
+        </div>
+        <p class="text-white/20 text-xs font-mono">2026 Autonomous FinOps Foundation • Open Specification FOCUS 1.0 Compliant • Based on Technical Monograph • <a href="https://finops.org/projects/focus/" class="text-[#deff9a]">FOCUS Spec</a> | <a href="#view-monograph" class="text-[#deff9a]">Download PDF</a></p>
+    </footer>
+
+    <script>
+        // Smooth reveal on scroll logic (Simple Intersection Observer)
+        const observerOptions = { threshold: 0.1 };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('opacity-100');
+                    entry.target.classList.remove('opacity-0', 'translate-y-10');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('section').forEach(section => {
+            section.classList.add('transition-all', 'duration-1000', 'opacity-0', 'translate-y-10');
+            observer.observe(section);
+        });
+    </script>
+</body>
+</html>
