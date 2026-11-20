@@ -1,0 +1,26 @@
+# Install once from the repo root:  version-5/.venv/bin/pre-commit install
+# Only version-5 is checked; earlier versions are kept as-is for reference.
+files: ^version-5/
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+        exclude: ^version-5/(finops_artifacts/|sample_cloud_data\.csv|tests/fixtures/)
+      - id: detect-private-key
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+
+  - repo: https://github.com/psf/black
+    rev: 24.8.0
+    hooks:
+      - id: black
