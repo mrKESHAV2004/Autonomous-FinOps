@@ -108,18 +108,24 @@ version-5/
 
 Each phase ends in something runnable. Sizing assumes one developer.
 
-### Phase 0 — Foundation (≈1 week)
-- [ ] `pyproject.toml` with pinned deps (start from `version-5/requirements.txt`); split an `[ml]` extra so the web image can stay slim.
-- [ ] Tooling: `ruff`, `black`, `isort`, `mypy`, `pytest`, `pytest-cov`, `bandit`, pre-commit.
-- [ ] Replace all `print()` with `logging` (structured JSON in prod).
-- [ ] Move to `src/` layout; add `create_app()` and `config.py` (Dev/Test/Prod, all secrets from env, fail fast if `FINOPS_SECRET_KEY` is missing in prod).
-- [ ] **Delete the fallback ML path** in `interface.py` — `ml.py` becomes the single implementation.
-- [ ] Golden-file test: run the current pipeline on `focus_sample.csv`, snapshot key numbers (zombie count, total waste, forecast sum ± tolerance) so refactors can't silently change results.
+### Phase 0 — Foundation (≈1 week) — ✅ done 2026-11-20
+- [x] `pyproject.toml` + `uv.lock` (pinned). *The `[ml]` extra is deferred to Phase 2: the web process still runs the LSTM until the worker exists.*
+- [x] Tooling: `ruff` (incl. isort rules), `black`, `mypy`, `pytest`, `pytest-cov`, `bandit`, pre-commit; CI in `.github/workflows/ci.yml` with an 80% coverage gate.
+- [x] Replace all `print()` with `logging` (structured JSON in prod).
+- [x] `src/` layout (`finops_core`, `finops_app`); `create_app()` and `config.py` (fails fast on missing `FINOPS_SECRET_KEY` or debug in prod).
+- [x] **Fallback ML path deleted**; `ml.py` split one-module-per-class into `finops_core` (behaviour unchanged).
+- [x] Golden-file tests against the version-4 output for `focus_sample.csv`, `focus_sample_10000.csv` and `sample_cloud_data.csv`.
 
-**Done when:** `pytest` is green in CI and the app renders the same dashboard for `focus_sample.csv`.
+**Result:** 69 tests pass, 1 strict xfail (bug below), 94.6% coverage; dashboard verified in the browser. See `version-5/README.md`.
+
+**Found during Phase 0 — carried into Phase 1:**
+- **Confidence scores are inverted (version-4 bug).** `IsolationForest.decision_function` is *lower* for more anomalous rows, but `_decision_to_probability` maps higher scores to higher probability, so the most extreme zombies are labelled Low. Kept for parity; pinned by `test_most_extreme_zombies_get_high_confidence` (strict xfail).
+- **LSTM forecasts are not reproducible on short histories, even in version 4:** repeated runs spread 12% (`focus_sample`, 25 days) and 24% (`focus_sample_10000`, 30 days), vs 0.3% on 100 days. Strengthens the case for a statistical baseline below.
+- Features are computed before zero/negative-cost rows (credits) are dropped, causing harmless `log1p` warnings; filter first.
 
 ### Phase 1 — Core engine refactor (≈1–2 weeks)
-- [ ] Split `ml.py` into `finops_core` modules (§3). Functions < 50 lines, typed, returning frozen dataclasses instead of dicts / DataFrames with side columns.
+- [ ] ~~Split `ml.py` into `finops_core` modules~~ (done in Phase 0). Return frozen dataclasses instead of dicts / DataFrames with side columns.
+- [ ] Fix the inverted confidence score (see Phase 0 findings) and update the golden files deliberately.
 - [ ] **Schema contract** (`schema.py`): required FOCUS columns, type coercion, clear user-facing errors ("missing column `EffectiveCost`").
 - [ ] **Resource-level detection:** aggregate rows by `ResourceId` (fallback: `ServiceName` + `RegionId` + `SubAccountId`) over the window, compute utilisation features (cost trend, usage trend, cost/usage ratio, days since last usage), then score resources. Keep the row-level ensemble as a secondary signal.
 - [ ] **Explainability:** each finding carries a reason ("cost $X/day, usage ≈0 for 14 days") and its top contributing features.
