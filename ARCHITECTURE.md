@@ -46,6 +46,13 @@ Diagrams are written in [Mermaid](https://mermaid.js.org/), which renders on Git
 > statistical forecast in `forecast_baseline.py` instead of training the LSTM in
 > §6 (now offline-only). Problems 1–4 in §8 are resolved; see
 > [PRODUCT_PLAN.md](PRODUCT_PLAN.md) Phase 1 for details.
+>
+> **Phase 2 (2026-11-26):** uploads no longer run the engine in the request.
+> The file is checked and stored, an `Analysis` row is queued, and an RQ worker
+> (or a background thread when Redis isn't configured) runs `finops_core` and
+> writes findings and forecast points to the database (SQLAlchemy + Alembic,
+> SQLite locally, PostgreSQL in production). This matches the target
+> architecture in Part B, minus object storage on S3 and accounts (Phases 3 and 6).
 
 ## 1. System context (today)
 

@@ -137,14 +137,17 @@ Each phase ends in something runnable. Sizing assumes one developer.
 
 **Deferred** (needs data with longer per-resource history than the samples have): cost/usage *trend* features and "days since last usage"; per-tenant caching of forecasts (comes with the database in Phase 2).
 
-### Phase 2 — Persistence & async jobs (≈1–2 weeks)
-- [ ] SQLAlchemy models: `Organization`, `User`, `Membership(role)`, `Dataset`, `Analysis(status, model_version, started/finished)`, `Finding(resource_id, service, region, account, est_monthly_waste, confidence, reason, status)`, `ForecastPoint`, `AuditLog`.
-- [ ] Alembic migrations; ORM-only queries; every query scoped by `org_id` through one helper.
-- [ ] Redis + RQ (or Celery) worker; upload creates a `Dataset` and enqueues an `Analysis`; UI polls `/analyses/<id>/status`.
-- [ ] Raw files in object storage (local dir in dev, S3 in prod) with org-prefixed keys; uploads validated (extension, MIME sniff, size, row cap) before enqueue.
-- [ ] Retention policy for raw uploads (e.g. 90 days).
+### Phase 2 — Persistence & async jobs (≈1–2 weeks) — ✅ done 2026-11-26
+- [x] SQLAlchemy 2 models (`finops_app/models.py`): `Organization`, `User`, `Membership(role)`, `Dataset`, `Analysis(status, analysis_version, started/finished, error, headline totals, daily series)`, `Finding(one row per resource, confidence, signals, reasons, status)`, `ForecastPoint`, `AuditLog`. Random hex ids, so URLs can't be enumerated.
+- [x] Alembic migrations (`finops_app/migrations`, applied by `finops-db upgrade` or at start-up outside production); a test fails if models drift from the migrations. Every customer-data query starts from `repository.scoped(Model, org_id)`; isolation is tested, and the database tests also run on PostgreSQL in CI.
+- [x] Redis + RQ worker (`finops-worker`); with no Redis the web app runs jobs on a thread and re-queues interrupted ones at start-up (ADR `version-5/docs/adr/0001-job-queue.md`). Upload creates a `Dataset` and a queued `Analysis` and redirects; the page polls `/analyses/<id>/status`.
+- [x] Raw files under org-prefixed keys (`<org>/<yyyy>/<mm>/<id>.csv`) via a `Storage` interface (local directory now); uploads are checked before anything is stored: extension, UTF-8 CSV sniff (no binary data, a comma-separated header), size (`FINOPS_MAX_UPLOAD_MB`) and row cap (`FINOPS_MAX_ROWS`).
+- [x] Retention: `finops-cleanup` deletes raw uploads older than `FINOPS_RETENTION_DAYS` (90); results are kept and each deletion is audited.
+- [x] `docker-compose.yml`: web, worker, PostgreSQL, Redis and a one-shot migration.
 
-**Done when:** uploading returns immediately, results survive restarts, and a history page lists past analyses.
+**Result:** the upload request returns in about 0.1 s; on the Docker stack the RQ worker analysed `focus_sample_10000.csv` in 1.8 s, and the result survived a web restart. 163 tests locally (172 in CI, where the database tests also run on PostgreSQL), 96% coverage.
+
+**Deferred:** the S3 storage backend (Phase 6, with deployment); a command to re-queue jobs lost from Redis; `Finding.status` changes (fix, snooze) arrive with the Phase 4 workflow.
 
 ### Phase 3 — Accounts, tenancy & security (≈1 week)
 - [ ] Auth: Flask-Login + email/password (argon2) to start; OAuth (Google/GitHub) next. CSRF on all forms (Flask-WTF), secure cookies, session timeout.
