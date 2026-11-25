@@ -1,61 +1,353 @@
 {
-  "avg_daily_cost": "$7.76",
-  "avg_daily_zombie": "$3.70",
-  "confidence_summary": {
-    "High": 15,
-    "Low": 24,
-    "Medium": 11
-  },
-  "forecast_bau": "$50.81",
-  "forecast_opt": "$25.09",
-  "insight_detail": [
-    "Analyzed 427 records spanning 30 days",
-    "Detected 50 potential zombie resources",
-    "Identified $26 in 7-day savings opportunity"
-  ],
-  "insight_headline": "AI-Powered Cloud Waste Analysis Complete",
+  "analysis_version": "phase1-resource-v1",
+  "records": 427,
+  "resources": 275,
+  "period_start": "2024-09-01",
+  "period_end": "2024-09-30",
   "period_days": 30,
-  "plot_keys": [
-    "main_plot",
-    "zombie_analysis"
+  "total_spend": 232.832434,
+  "daily_dates": [
+    "2024-09-01",
+    "2024-09-02",
+    "2024-09-03",
+    "2024-09-04",
+    "2024-09-05",
+    "2024-09-06",
+    "2024-09-07",
+    "2024-09-08",
+    "2024-09-09",
+    "2024-09-10",
+    "2024-09-11",
+    "2024-09-12",
+    "2024-09-13",
+    "2024-09-14",
+    "2024-09-15",
+    "2024-09-16",
+    "2024-09-17",
+    "2024-09-18",
+    "2024-09-19",
+    "2024-09-20",
+    "2024-09-21",
+    "2024-09-22",
+    "2024-09-23",
+    "2024-09-24",
+    "2024-09-25",
+    "2024-09-26",
+    "2024-09-27",
+    "2024-09-28",
+    "2024-09-29",
+    "2024-09-30"
   ],
-  "recommendations": [
+  "daily_costs": [
+    3.656735,
+    0.016262,
+    1.109321,
+    0.315848,
+    0.086856,
+    2.112908,
+    22.27964,
+    9.457984,
+    4.297147,
+    9.066964,
+    2.005317,
+    10.251376,
+    6.054513,
+    16.607043,
+    10.27214,
+    12.079452,
+    4.150164,
+    22.226371,
+    5.786393,
+    4.0,
+    2.0,
+    3.0,
+    12.0,
+    15.0,
+    10.0,
+    8.0,
+    15.0,
+    6.0,
+    10.0,
+    6.0
+  ],
+  "findings": [
     {
-      "action": "Immediate review recommended",
-      "description": "47.7% of total spend is potentially wasteful.",
-      "icon": "bi-exclamation-triangle",
-      "priority": "high",
-      "title": "CRITICAL: Waste Level Detected"
+      "resource_key": "/subscriptions/64e355d7-997c-491d-b0c1-8414dccfcf42/resourcegroups/devops/providers/microsoft.compute/disks/data1",
+      "resource_id": "/subscriptions/64e355d7-997c-491d-b0c1-8414dccfcf42/resourcegroups/devops/providers/microsoft.compute/disks/data1",
+      "resource_name": "Data1",
+      "service": "Compute",
+      "region": "francecentral",
+      "account": "/subscriptions/64e355d7-997c-491d-b0c1-8414dccfcf42",
+      "unit": "Units/Month",
+      "total_cost": 5.256087,
+      "total_usage": 0.033336,
+      "days_active": 1,
+      "estimated_waste": 4.599035,
+      "estimated_monthly_waste": 4.599035,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.99)"
+      ]
     },
     {
-      "action": "Start optimization with Compute resources",
-      "description": "Accounts for $75.48 of total waste.",
-      "icon": "bi-funnel",
-      "priority": "high",
-      "title": "Focus Area: Compute"
+      "resource_key": "i-0509627e78f1f09ff",
+      "resource_id": "i-0509627e78f1f09ff",
+      "resource_name": null,
+      "service": "Compute",
+      "region": "us-east-1",
+      "account": "11353890204",
+      "unit": "Hours",
+      "total_cost": 6.0,
+      "total_usage": 1.0,
+      "days_active": 1,
+      "estimated_waste": 4.0,
+      "estimated_monthly_waste": 4.0,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.97)"
+      ]
     },
     {
-      "action": "Implement recommendations within 48 hours",
-      "description": "$26 in 7 days ($110 monthly).",
-      "icon": "bi-cash-coin",
-      "priority": "high",
-      "title": "Significant Savings Potential"
+      "resource_key": "/subscriptions/73c0021f-a37d-433f-8baa-7450cb54eea6/resourcegroups/leap/providers/microsoft.compute/disks/leapv2_leapv2_2_disk2_459dfb88f7144c1b84c47fc011f71d86",
+      "resource_id": "/subscriptions/73c0021f-a37d-433f-8baa-7450cb54eea6/resourcegroups/leap/providers/microsoft.compute/disks/leapv2_leapv2_2_disk2_459dfb88f7144c1b84c47fc011f71d86",
+      "resource_name": "LeapV2_LeapV2_2_disk2_459dfb88f7144c1b84c47fc011f71d86",
+      "service": "Compute",
+      "region": "westus",
+      "account": "/subscriptions/73c0021f-a37d-433f-8baa-7450cb54eea6",
+      "unit": "Units/Month",
+      "total_cost": 4.506027,
+      "total_usage": 0.033336,
+      "days_active": 1,
+      "estimated_waste": 3.848975,
+      "estimated_monthly_waste": 3.848975,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.99)"
+      ]
     },
     {
-      "action": "Review high confidence items first",
-      "description": "15 resources with high confidence of being wasteful.",
-      "icon": "bi-shield-check",
-      "priority": "medium",
-      "title": "High Confidence Detections"
+      "resource_key": "/subscriptions/1caaa5a3-2b66-438e-8ab4-bce37d518c5d/resourcegroups/ahbtest/providers/microsoft.compute/disks/sqlvmstandard_datadisk_0",
+      "resource_id": "/subscriptions/1caaa5a3-2b66-438e-8ab4-bce37d518c5d/resourcegroups/ahbtest/providers/microsoft.compute/disks/sqlvmstandard_datadisk_0",
+      "resource_name": "sqlvmstandard_DataDisk_0",
+      "service": "Compute",
+      "region": "westus2",
+      "account": "/subscriptions/1caaa5a3-2b66-438e-8ab4-bce37d518c5d",
+      "unit": "Units/Month",
+      "total_cost": 4.096328,
+      "total_usage": 0.033336,
+      "days_active": 1,
+      "estimated_waste": 3.439275,
+      "estimated_monthly_waste": 3.439275,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.98)"
+      ]
+    },
+    {
+      "resource_key": "i-03453l7f712e6e1bl",
+      "resource_id": "i-03453l7f712e6e1bl",
+      "resource_name": null,
+      "service": "Compute",
+      "region": "us-east-1",
+      "account": "18938484842",
+      "unit": "Hours",
+      "total_cost": 6.0,
+      "total_usage": 2.0,
+      "days_active": 2,
+      "estimated_waste": 2.0,
+      "estimated_monthly_waste": 2.0,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.92)"
+      ]
+    },
+    {
+      "resource_key": "i-0483114bea2a98lb4",
+      "resource_id": "i-0483114bea2a98lb4",
+      "resource_name": null,
+      "service": "Compute",
+      "region": "us-east-1",
+      "account": "11353890204",
+      "unit": "Hours",
+      "total_cost": 4.0,
+      "total_usage": 1.0,
+      "days_active": 1,
+      "estimated_waste": 2.0,
+      "estimated_monthly_waste": 2.0,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.92)"
+      ]
+    },
+    {
+      "resource_key": "i-0e0a6ef29e1l24404",
+      "resource_id": "i-0e0a6ef29e1l24404",
+      "resource_name": null,
+      "service": "Compute",
+      "region": "us-east-1",
+      "account": "11353890204",
+      "unit": "Hours",
+      "total_cost": 4.0,
+      "total_usage": 1.0,
+      "days_active": 1,
+      "estimated_waste": 2.0,
+      "estimated_monthly_waste": 2.0,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.92)"
+      ]
+    },
+    {
+      "resource_key": "i-0e4ll70f72lfbal08",
+      "resource_id": "i-0e4ll70f72lfbal08",
+      "resource_name": null,
+      "service": "Compute",
+      "region": "us-east-1",
+      "account": "11353890204",
+      "unit": "Hours",
+      "total_cost": 4.0,
+      "total_usage": 1.0,
+      "days_active": 1,
+      "estimated_waste": 2.0,
+      "estimated_monthly_waste": 2.0,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.92)"
+      ]
+    },
+    {
+      "resource_key": "i-0f8831559ef322lla",
+      "resource_id": "i-0f8831559ef322lla",
+      "resource_name": null,
+      "service": "Compute",
+      "region": "us-east-1",
+      "account": "11353890204",
+      "unit": "Hours",
+      "total_cost": 4.0,
+      "total_usage": 1.0,
+      "days_active": 1,
+      "estimated_waste": 2.0,
+      "estimated_monthly_waste": 2.0,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.93)"
+      ]
+    },
+    {
+      "resource_key": "arn:ats:emastilbimeslstec:ap-souteeast-1:365499461711:bime-slstec/bs-0l7e6381e5a9f572l",
+      "resource_id": "arn:ats:emastilbimeslstec:ap-souteeast-1:365499461711:bime-slstec/bs-0l7e6381e5a9f572l",
+      "resource_name": null,
+      "service": "Storage",
+      "region": "ap-southeast-1",
+      "account": "18938484842",
+      "unit": "GB",
+      "total_cost": 1.0,
+      "total_usage": 9.277369,
+      "days_active": 1,
+      "estimated_waste": 0.814453,
+      "estimated_monthly_waste": 0.814453,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $0.1078 per GB, 5.4\u00d7 the median of 3 similar Storage resources"
+      ]
+    },
+    {
+      "resource_key": "/subscriptions/9ec51cfd-5ca7-4d76-8101-dd0a4abc5674/resourcegroups/mc_rg_name_cluster_name_centralus/providers/microsoft.network/loadbalancers/kubernetes",
+      "resource_id": "/subscriptions/9ec51cfd-5ca7-4d76-8101-dd0a4abc5674/resourcegroups/mc_rg_name_cluster_name_centralus/providers/microsoft.network/loadbalancers/kubernetes",
+      "resource_name": "kubernetes",
+      "service": "Networking",
+      "region": "centralus",
+      "account": "/subscriptions/9ec51cfd-5ca7-4d76-8101-dd0a4abc5674",
+      "unit": "Hours",
+      "total_cost": 0.6,
+      "total_usage": 24.0,
+      "days_active": 1,
+      "estimated_waste": 0.48,
+      "estimated_monthly_waste": 0.48,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $0.0250 per Hours, 5.0\u00d7 the median of 6 similar Networking resources"
+      ]
     }
   ],
-  "savings": "$25.72",
-  "savings_pct_vs_bau": "50.6%",
-  "total_records": 427,
-  "total_spend": "$232.83",
-  "waste_distribution": "<table border=\"1\" class=\"dataframe table table-sm table-hover\">\n  <thead>\n    <tr>\n      <th>ServiceCategory</th>\n      <th></th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <th>Compute</th>\n      <td>$75.48</td>\n    </tr>\n    <tr>\n      <th>Databases</th>\n      <td>$29.99</td>\n    </tr>\n    <tr>\n      <th>Storage</th>\n      <td>$2.00</td>\n    </tr>\n    <tr>\n      <th>Other</th>\n      <td>$1.38</td>\n    </tr>\n    <tr>\n      <th>Web</th>\n      <td>$1.00</td>\n    </tr>\n  </tbody>\n</table>",
-  "zombie_count": "50",
-  "zombie_pct_of_total": "47.7%",
-  "zombie_waste": "$111.02",
-  "zombies_preview": "<table border=\"1\" class=\"dataframe table table-striped table-hover align-middle\">\n  <thead>\n    <tr style=\"text-align: right;\">\n      <th>UsageDate</th>\n      <th>ServiceCategory</th>\n      <th>EffectiveCost</th>\n      <th>confidence</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>2024-09-01</td>\n      <td>Compute</td>\n      <td>$1.91</td>\n      <td>High</td>\n    </tr>\n    <tr>\n      <td>2024-09-01</td>\n      <td>Compute</td>\n      <td>$0.66</td>\n      <td>Low</td>\n    </tr>\n    <tr>\n      <td>2024-09-03</td>\n      <td>Compute</td>\n      <td>$0.98</td>\n      <td>High</td>\n    </tr>\n    <tr>\n      <td>2024-09-05</td>\n      <td>AI and Machine Learning</td>\n      <td>$0.01</td>\n      <td>Medium</td>\n    </tr>\n    <tr>\n      <td>2024-09-06</td>\n      <td>Databases</td>\n      <td>$0.48</td>\n      <td>Low</td>\n    </tr>\n    <tr>\n      <td>2024-09-06</td>\n      <td>Web</td>\n      <td>$1.00</td>\n      <td>Low</td>\n    </tr>\n    <tr>\n      <td>2024-09-06</td>\n      <td>Compute</td>\n      <td>$0.48</td>\n      <td>High</td>\n    </tr>\n    <tr>\n      <td>2024-09-07</td>\n      <td>Compute</td>\n      <td>$3.00</td>\n      <td>High</td>\n    </tr>\n    <tr>\n      <td>2024-09-07</td>\n      <td>Databases</td>\n      <td>$17.54</td>\n      <td>Low</td>\n    </tr>\n    <tr>\n      <td>2024-09-07</td>\n      <td>Compute</td>\n      <td>$0.60</td>\n      <td>Low</td>\n    </tr>\n  </tbody>\n</table>"
+  "forecast": {
+    "method": "moving_average_7",
+    "dates": [
+      "2024-10-01",
+      "2024-10-02",
+      "2024-10-03",
+      "2024-10-04",
+      "2024-10-05",
+      "2024-10-06",
+      "2024-10-07"
+    ],
+    "values": [
+      10.0,
+      10.0,
+      10.0,
+      10.0,
+      10.0,
+      10.0,
+      10.0
+    ],
+    "lower": [
+      3.130007,
+      3.130007,
+      3.130007,
+      3.130007,
+      3.130007,
+      3.130007,
+      3.130007
+    ],
+    "upper": [
+      16.869993,
+      16.869993,
+      16.869993,
+      16.869993,
+      16.869993,
+      16.869993,
+      16.869993
+    ],
+    "backtest_mae": 3.316555
+  },
+  "total_waste": 27.181738,
+  "waste_percentage": 11.674378,
+  "confidence_summary": {
+    "High": 0,
+    "Medium": 2,
+    "Low": 9
+  }
 }

@@ -1,61 +1,1713 @@
 {
-  "avg_daily_cost": "$6,026.31",
-  "avg_daily_zombie": "$1,434.41",
-  "confidence_summary": {
-    "High": 118,
-    "Low": 227,
-    "Medium": 105
-  },
-  "forecast_bau": "$42,058.52",
-  "forecast_opt": "$32,017.68",
-  "insight_detail": [
-    "Analyzed 10,000 records spanning 100 days",
-    "Detected 450 potential zombie resources",
-    "Identified $10,041 in 7-day savings opportunity"
-  ],
-  "insight_headline": "AI-Powered Cloud Waste Analysis Complete",
+  "analysis_version": "phase1-resource-v1",
+  "records": 10000,
+  "resources": 10000,
+  "period_start": "2024-01-01",
+  "period_end": "2024-04-09",
   "period_days": 100,
-  "plot_keys": [
-    "main_plot",
-    "zombie_analysis"
+  "total_spend": 602631.1212,
+  "daily_dates": [
+    "2024-01-01",
+    "2024-01-02",
+    "2024-01-03",
+    "2024-01-04",
+    "2024-01-05",
+    "2024-01-06",
+    "2024-01-07",
+    "2024-01-08",
+    "2024-01-09",
+    "2024-01-10",
+    "2024-01-11",
+    "2024-01-12",
+    "2024-01-13",
+    "2024-01-14",
+    "2024-01-15",
+    "2024-01-16",
+    "2024-01-17",
+    "2024-01-18",
+    "2024-01-19",
+    "2024-01-20",
+    "2024-01-21",
+    "2024-01-22",
+    "2024-01-23",
+    "2024-01-24",
+    "2024-01-25",
+    "2024-01-26",
+    "2024-01-27",
+    "2024-01-28",
+    "2024-01-29",
+    "2024-01-30",
+    "2024-01-31",
+    "2024-02-01",
+    "2024-02-02",
+    "2024-02-03",
+    "2024-02-04",
+    "2024-02-05",
+    "2024-02-06",
+    "2024-02-07",
+    "2024-02-08",
+    "2024-02-09",
+    "2024-02-10",
+    "2024-02-11",
+    "2024-02-12",
+    "2024-02-13",
+    "2024-02-14",
+    "2024-02-15",
+    "2024-02-16",
+    "2024-02-17",
+    "2024-02-18",
+    "2024-02-19",
+    "2024-02-20",
+    "2024-02-21",
+    "2024-02-22",
+    "2024-02-23",
+    "2024-02-24",
+    "2024-02-25",
+    "2024-02-26",
+    "2024-02-27",
+    "2024-02-28",
+    "2024-02-29",
+    "2024-03-01",
+    "2024-03-02",
+    "2024-03-03",
+    "2024-03-04",
+    "2024-03-05",
+    "2024-03-06",
+    "2024-03-07",
+    "2024-03-08",
+    "2024-03-09",
+    "2024-03-10",
+    "2024-03-11",
+    "2024-03-12",
+    "2024-03-13",
+    "2024-03-14",
+    "2024-03-15",
+    "2024-03-16",
+    "2024-03-17",
+    "2024-03-18",
+    "2024-03-19",
+    "2024-03-20",
+    "2024-03-21",
+    "2024-03-22",
+    "2024-03-23",
+    "2024-03-24",
+    "2024-03-25",
+    "2024-03-26",
+    "2024-03-27",
+    "2024-03-28",
+    "2024-03-29",
+    "2024-03-30",
+    "2024-03-31",
+    "2024-04-01",
+    "2024-04-02",
+    "2024-04-03",
+    "2024-04-04",
+    "2024-04-05",
+    "2024-04-06",
+    "2024-04-07",
+    "2024-04-08",
+    "2024-04-09"
   ],
-  "recommendations": [
+  "daily_costs": [
+    7412.939156,
+    4147.850073,
+    5204.776917,
+    7209.489601,
+    4465.536368,
+    5315.678896,
+    6023.030913,
+    5193.427406,
+    5316.351222,
+    5980.416174,
+    5396.848552,
+    5302.803936,
+    4169.184078,
+    5320.43879,
+    5096.577298,
+    6503.714142,
+    6345.311369,
+    5627.781191,
+    6873.993827,
+    5602.990233,
+    6315.868102,
+    5848.868071,
+    5935.429447,
+    5503.921128,
+    6096.276817,
+    6778.315049,
+    5778.987608,
+    5121.663984,
+    6784.482162,
+    5331.341431,
+    5396.713056,
+    8238.623392,
+    4941.080894,
+    7397.51662,
+    4883.713358,
+    7620.820423,
+    5953.849679,
+    6578.037732,
+    5510.348122,
+    6347.071968,
+    5622.304929,
+    6248.337291,
+    8192.898276,
+    8033.856058,
+    5446.223702,
+    6440.192342,
+    7775.87408,
+    5185.053863,
+    5046.61646,
+    5408.785678,
+    5282.378211,
+    6437.609268,
+    4790.069066,
+    7762.783474,
+    6691.439424,
+    5608.407588,
+    5277.427908,
+    7155.663245,
+    6456.89473,
+    7557.936321,
+    6443.907975,
+    5510.278447,
+    6163.406474,
+    5790.122742,
+    6466.407344,
+    4646.441298,
+    6153.229844,
+    6969.410033,
+    6100.515882,
+    7367.553035,
+    5812.675453,
+    4741.018026,
+    6368.727288,
+    6726.868787,
+    7261.748252,
+    4067.554788,
+    5488.756473,
+    6067.386271,
+    6211.819781,
+    6093.994268,
+    5673.97104,
+    4867.1235,
+    5501.597453,
+    6004.665538,
+    6281.956214,
+    6344.673169,
+    7782.430184,
+    6269.096094,
+    6217.604828,
+    6173.536014,
+    7205.118137,
+    5115.965808,
+    6293.268622,
+    5129.646368,
+    4905.338132,
+    6662.729902,
+    6752.6154,
+    7076.357195,
+    5514.616086,
+    5114.167958
+  ],
+  "findings": [
     {
-      "action": "Immediate review recommended",
-      "description": "23.8% of total spend is potentially wasteful.",
-      "icon": "bi-exclamation-triangle",
-      "priority": "high",
-      "title": "CRITICAL: Waste Level Detected"
+      "resource_key": "row:1858",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Compute",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 1829.41254,
+      "total_usage": 3.671618,
+      "days_active": 1,
+      "estimated_waste": 1826.356627,
+      "estimated_monthly_waste": 547.906988,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $498.2579 per unit, 598.6\u00d7 the median of 2420 similar Compute resources"
+      ]
     },
     {
-      "action": "Start optimization with Database resources",
-      "description": "Accounts for $39,159.99 of total waste.",
-      "icon": "bi-funnel",
-      "priority": "high",
-      "title": "Focus Area: Database"
+      "resource_key": "row:3795",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 1690.876331,
+      "total_usage": 11.668557,
+      "days_active": 1,
+      "estimated_waste": 1681.19253,
+      "estimated_monthly_waste": 504.357759,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $144.9088 per unit, 174.6\u00d7 the median of 2585 similar Network resources"
+      ]
     },
     {
-      "action": "Implement recommendations within 48 hours",
-      "description": "$10,041 in 7 days ($43,032 monthly).",
-      "icon": "bi-cash-coin",
-      "priority": "high",
-      "title": "Significant Savings Potential"
+      "resource_key": "row:2117",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 1132.438775,
+      "total_usage": 3.503228,
+      "days_active": 1,
+      "estimated_waste": 1129.531426,
+      "estimated_monthly_waste": 338.859428,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $323.2558 per unit, 389.5\u00d7 the median of 2585 similar Network resources"
+      ]
     },
     {
-      "action": "Review high confidence items first",
-      "description": "118 resources with high confidence of being wasteful.",
-      "icon": "bi-shield-check",
-      "priority": "medium",
-      "title": "High Confidence Detections"
+      "resource_key": "row:2227",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Storage",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 974.706798,
+      "total_usage": 5.511865,
+      "days_active": 1,
+      "estimated_waste": 970.10047,
+      "estimated_monthly_waste": 291.030141,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $176.8379 per unit, 211.6\u00d7 the median of 2468 similar Storage resources"
+      ]
+    },
+    {
+      "resource_key": "row:29",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Database",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 971.961029,
+      "total_usage": 3.671539,
+      "days_active": 1,
+      "estimated_waste": 968.875616,
+      "estimated_monthly_waste": 290.662685,
+      "confidence": "High",
+      "signals": [
+        "overpriced",
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Pays $264.7285 per unit, 315.0\u00d7 the median of 2527 similar Database resources",
+        "Unusual cost/usage pattern (anomaly score 0.99)"
+      ]
+    },
+    {
+      "resource_key": "row:5656",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 902.292681,
+      "total_usage": 1.696585,
+      "days_active": 1,
+      "estimated_waste": 900.884676,
+      "estimated_monthly_waste": 270.265403,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $531.8288 per unit, 640.8\u00d7 the median of 2585 similar Network resources"
+      ]
+    },
+    {
+      "resource_key": "row:5956",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 845.17964,
+      "total_usage": 4.063857,
+      "days_active": 1,
+      "estimated_waste": 841.807022,
+      "estimated_monthly_waste": 252.542107,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $207.9748 per unit, 250.6\u00d7 the median of 2585 similar Network resources"
+      ]
+    },
+    {
+      "resource_key": "row:7468",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 824.112444,
+      "total_usage": 1.899128,
+      "days_active": 1,
+      "estimated_waste": 822.536347,
+      "estimated_monthly_waste": 246.760904,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $433.9426 per unit, 522.9\u00d7 the median of 2585 similar Network resources"
+      ]
+    },
+    {
+      "resource_key": "row:5193",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Storage",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 812.557466,
+      "total_usage": 5.064961,
+      "days_active": 1,
+      "estimated_waste": 808.32462,
+      "estimated_monthly_waste": 242.497386,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $160.4272 per unit, 192.0\u00d7 the median of 2468 similar Storage resources"
+      ]
+    },
+    {
+      "resource_key": "row:8753",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Storage",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 732.052626,
+      "total_usage": 3.038732,
+      "days_active": 1,
+      "estimated_waste": 729.513123,
+      "estimated_monthly_waste": 218.853937,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $240.9073 per unit, 288.3\u00d7 the median of 2468 similar Storage resources"
+      ]
+    },
+    {
+      "resource_key": "row:3346",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 687.04293,
+      "total_usage": 3.461873,
+      "days_active": 1,
+      "estimated_waste": 684.169902,
+      "estimated_monthly_waste": 205.250971,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $198.4599 per unit, 239.1\u00d7 the median of 2585 similar Network resources"
+      ]
+    },
+    {
+      "resource_key": "row:2674",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Storage",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 682.00693,
+      "total_usage": 0.36967,
+      "days_active": 1,
+      "estimated_waste": 681.697992,
+      "estimated_monthly_waste": 204.509398,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $1,844.9056 per unit, 2207.6\u00d7 the median of 2468 similar Storage resources"
+      ]
+    },
+    {
+      "resource_key": "row:4",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Database",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 615.877471,
+      "total_usage": 7.529142,
+      "days_active": 1,
+      "estimated_waste": 609.550286,
+      "estimated_monthly_waste": 182.865086,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.99)"
+      ]
+    },
+    {
+      "resource_key": "row:3393",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Storage",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 612.760427,
+      "total_usage": 4.472345,
+      "days_active": 1,
+      "estimated_waste": 609.022837,
+      "estimated_monthly_waste": 182.706851,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $137.0110 per unit, 163.9\u00d7 the median of 2468 similar Storage resources"
+      ]
+    },
+    {
+      "resource_key": "row:8340",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 593.275938,
+      "total_usage": 1.681686,
+      "days_active": 1,
+      "estimated_waste": 591.880297,
+      "estimated_monthly_waste": 177.564089,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $352.7864 per unit, 425.1\u00d7 the median of 2585 similar Network resources"
+      ]
+    },
+    {
+      "resource_key": "row:4501",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Storage",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 588.408767,
+      "total_usage": 0.287152,
+      "days_active": 1,
+      "estimated_waste": 588.168791,
+      "estimated_monthly_waste": 176.450637,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $2,049.1205 per unit, 2451.9\u00d7 the median of 2468 similar Storage resources"
+      ]
+    },
+    {
+      "resource_key": "row:9665",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Compute",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 572.390119,
+      "total_usage": 1.006002,
+      "days_active": 1,
+      "estimated_waste": 571.552816,
+      "estimated_monthly_waste": 171.465845,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $568.9751 per unit, 683.6\u00d7 the median of 2420 similar Compute resources"
+      ]
+    },
+    {
+      "resource_key": "row:4692",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 554.369594,
+      "total_usage": 2.375663,
+      "days_active": 1,
+      "estimated_waste": 552.398018,
+      "estimated_monthly_waste": 165.719406,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $233.3536 per unit, 281.2\u00d7 the median of 2585 similar Network resources"
+      ]
+    },
+    {
+      "resource_key": "row:3465",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Compute",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 511.776098,
+      "total_usage": 0.281718,
+      "days_active": 1,
+      "estimated_waste": 511.541623,
+      "estimated_monthly_waste": 153.462487,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $1,816.6277 per unit, 2182.6\u00d7 the median of 2420 similar Compute resources"
+      ]
+    },
+    {
+      "resource_key": "row:4370",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Storage",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 501.803639,
+      "total_usage": 3.186423,
+      "days_active": 1,
+      "estimated_waste": 499.140709,
+      "estimated_monthly_waste": 149.742213,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $157.4818 per unit, 188.4\u00d7 the median of 2468 similar Storage resources"
+      ]
+    },
+    {
+      "resource_key": "row:5775",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Storage",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 469.002104,
+      "total_usage": 1.345479,
+      "days_active": 1,
+      "estimated_waste": 467.877672,
+      "estimated_monthly_waste": 140.363301,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $348.5762 per unit, 417.1\u00d7 the median of 2468 similar Storage resources"
+      ]
+    },
+    {
+      "resource_key": "row:8739",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 464.217173,
+      "total_usage": 2.369957,
+      "days_active": 1,
+      "estimated_waste": 462.250333,
+      "estimated_monthly_waste": 138.6751,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $195.8758 per unit, 236.0\u00d7 the median of 2585 similar Network resources"
+      ]
+    },
+    {
+      "resource_key": "row:361",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Compute",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 443.93588,
+      "total_usage": 2.582707,
+      "days_active": 1,
+      "estimated_waste": 441.786275,
+      "estimated_monthly_waste": 132.535882,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $171.8878 per unit, 206.5\u00d7 the median of 2420 similar Compute resources"
+      ]
+    },
+    {
+      "resource_key": "row:5805",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Database",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 422.927963,
+      "total_usage": 0.921502,
+      "days_active": 1,
+      "estimated_waste": 422.15357,
+      "estimated_monthly_waste": 126.646071,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $458.9551 per unit, 546.1\u00d7 the median of 2527 similar Database resources"
+      ]
+    },
+    {
+      "resource_key": "row:7825",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Compute",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 416.037944,
+      "total_usage": 2.401097,
+      "days_active": 1,
+      "estimated_waste": 414.039495,
+      "estimated_monthly_waste": 124.211848,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $173.2700 per unit, 208.2\u00d7 the median of 2420 similar Compute resources"
+      ]
+    },
+    {
+      "resource_key": "row:8431",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Database",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 384.709883,
+      "total_usage": 0.516744,
+      "days_active": 1,
+      "estimated_waste": 384.275633,
+      "estimated_monthly_waste": 115.28269,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $744.4890 per unit, 885.9\u00d7 the median of 2527 similar Database resources"
+      ]
+    },
+    {
+      "resource_key": "row:1004",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Storage",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 353.722965,
+      "total_usage": 1.300989,
+      "days_active": 1,
+      "estimated_waste": 352.635713,
+      "estimated_monthly_waste": 105.790714,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $271.8877 per unit, 325.3\u00d7 the median of 2468 similar Storage resources"
+      ]
+    },
+    {
+      "resource_key": "row:6478",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Database",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 351.153258,
+      "total_usage": 0.959311,
+      "days_active": 1,
+      "estimated_waste": 350.347092,
+      "estimated_monthly_waste": 105.104128,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $366.0473 per unit, 435.6\u00d7 the median of 2527 similar Database resources"
+      ]
+    },
+    {
+      "resource_key": "row:3304",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Compute",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 323.628309,
+      "total_usage": 1.22456,
+      "days_active": 1,
+      "estimated_waste": 322.609099,
+      "estimated_monthly_waste": 96.78273,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $264.2812 per unit, 317.5\u00d7 the median of 2420 similar Compute resources"
+      ]
+    },
+    {
+      "resource_key": "row:6",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 320.440451,
+      "total_usage": 5.759293,
+      "days_active": 1,
+      "estimated_waste": 315.660781,
+      "estimated_monthly_waste": 94.698234,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.99)"
+      ]
+    },
+    {
+      "resource_key": "row:2981",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Database",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 312.470984,
+      "total_usage": 0.270835,
+      "days_active": 1,
+      "estimated_waste": 312.243385,
+      "estimated_monthly_waste": 93.673015,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $1,153.7303 per unit, 1372.9\u00d7 the median of 2527 similar Database resources"
+      ]
+    },
+    {
+      "resource_key": "row:9057",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Storage",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 310.184942,
+      "total_usage": 0.405329,
+      "days_active": 1,
+      "estimated_waste": 309.846204,
+      "estimated_monthly_waste": 92.953861,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $765.2665 per unit, 915.7\u00d7 the median of 2468 similar Storage resources"
+      ]
+    },
+    {
+      "resource_key": "row:3765",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 308.282099,
+      "total_usage": 1.436497,
+      "days_active": 1,
+      "estimated_waste": 307.089942,
+      "estimated_monthly_waste": 92.126983,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $214.6068 per unit, 258.6\u00d7 the median of 2585 similar Network resources"
+      ]
+    },
+    {
+      "resource_key": "row:9638",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 304.745498,
+      "total_usage": 1.533241,
+      "days_active": 1,
+      "estimated_waste": 303.473053,
+      "estimated_monthly_waste": 91.041916,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $198.7590 per unit, 239.5\u00d7 the median of 2585 similar Network resources"
+      ]
+    },
+    {
+      "resource_key": "row:1761",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Database",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 302.132092,
+      "total_usage": 0.484584,
+      "days_active": 1,
+      "estimated_waste": 301.724866,
+      "estimated_monthly_waste": 90.51746,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $623.4870 per unit, 741.9\u00d7 the median of 2527 similar Database resources"
+      ]
+    },
+    {
+      "resource_key": "row:1179",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 284.622133,
+      "total_usage": 1.322273,
+      "days_active": 1,
+      "estimated_waste": 283.524772,
+      "estimated_monthly_waste": 85.057432,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $215.2522 per unit, 259.4\u00d7 the median of 2585 similar Network resources"
+      ]
+    },
+    {
+      "resource_key": "row:2729",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 260.400615,
+      "total_usage": 0.854433,
+      "days_active": 1,
+      "estimated_waste": 259.691516,
+      "estimated_monthly_waste": 77.907455,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $304.7641 per unit, 367.2\u00d7 the median of 2585 similar Network resources"
+      ]
+    },
+    {
+      "resource_key": "row:9563",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Storage",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 242.3077,
+      "total_usage": 1.210914,
+      "days_active": 1,
+      "estimated_waste": 241.295725,
+      "estimated_monthly_waste": 72.388717,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $200.1031 per unit, 239.4\u00d7 the median of 2468 similar Storage resources"
+      ]
+    },
+    {
+      "resource_key": "row:8968",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Database",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 231.324172,
+      "total_usage": 0.466425,
+      "days_active": 1,
+      "estimated_waste": 230.932207,
+      "estimated_monthly_waste": 69.279662,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $495.9515 per unit, 590.2\u00d7 the median of 2527 similar Database resources"
+      ]
+    },
+    {
+      "resource_key": "row:9871",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Storage",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 230.593392,
+      "total_usage": 0.557457,
+      "days_active": 1,
+      "estimated_waste": 230.127519,
+      "estimated_monthly_waste": 69.038256,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $413.6524 per unit, 495.0\u00d7 the median of 2468 similar Storage resources"
+      ]
+    },
+    {
+      "resource_key": "row:6928",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Database",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 227.457842,
+      "total_usage": 0.340312,
+      "days_active": 1,
+      "estimated_waste": 227.171858,
+      "estimated_monthly_waste": 68.151557,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $668.3802 per unit, 795.4\u00d7 the median of 2527 similar Database resources"
+      ]
+    },
+    {
+      "resource_key": "row:3658",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 218.639058,
+      "total_usage": 1.576526,
+      "days_active": 1,
+      "estimated_waste": 217.33069,
+      "estimated_monthly_waste": 65.199207,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $138.6840 per unit, 167.1\u00d7 the median of 2585 similar Network resources"
+      ]
+    },
+    {
+      "resource_key": "row:3751",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 199.037995,
+      "total_usage": 0.269515,
+      "days_active": 1,
+      "estimated_waste": 198.814323,
+      "estimated_monthly_waste": 59.644297,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $738.5047 per unit, 889.9\u00d7 the median of 2585 similar Network resources"
+      ]
+    },
+    {
+      "resource_key": "row:19",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Database",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 279.349326,
+      "total_usage": 96.576516,
+      "days_active": 1,
+      "estimated_waste": 198.190344,
+      "estimated_monthly_waste": 59.457103,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.99)"
+      ]
+    },
+    {
+      "resource_key": "row:618",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Compute",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 181.713547,
+      "total_usage": 0.309015,
+      "days_active": 1,
+      "estimated_waste": 181.456352,
+      "estimated_monthly_waste": 54.436906,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $588.0415 per unit, 706.5\u00d7 the median of 2420 similar Compute resources"
+      ]
+    },
+    {
+      "resource_key": "row:2812",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Database",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 174.896676,
+      "total_usage": 0.478777,
+      "days_active": 1,
+      "estimated_waste": 174.494331,
+      "estimated_monthly_waste": 52.348299,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $365.2986 per unit, 434.7\u00d7 the median of 2527 similar Database resources"
+      ]
+    },
+    {
+      "resource_key": "row:8622",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 162.024548,
+      "total_usage": 0.400854,
+      "days_active": 1,
+      "estimated_waste": 161.691877,
+      "estimated_monthly_waste": 48.507563,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $404.1982 per unit, 487.0\u00d7 the median of 2585 similar Network resources"
+      ]
+    },
+    {
+      "resource_key": "row:2830",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Storage",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 154.195371,
+      "total_usage": 0.981149,
+      "days_active": 1,
+      "estimated_waste": 153.375414,
+      "estimated_monthly_waste": 46.012624,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $157.1580 per unit, 188.1\u00d7 the median of 2468 similar Storage resources"
+      ]
+    },
+    {
+      "resource_key": "row:4169",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 146.616769,
+      "total_usage": 0.636376,
+      "days_active": 1,
+      "estimated_waste": 146.088637,
+      "estimated_monthly_waste": 43.826591,
+      "confidence": "Medium",
+      "signals": [
+        "overpriced"
+      ],
+      "reasons": [
+        "Pays $230.3932 per unit, 277.6\u00d7 the median of 2585 similar Network resources"
+      ]
+    },
+    {
+      "resource_key": "row:38",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 186.17785,
+      "total_usage": 52.113734,
+      "days_active": 1,
+      "estimated_waste": 142.928369,
+      "estimated_monthly_waste": 42.878511,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.99)"
+      ]
+    },
+    {
+      "resource_key": "row:33",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 136.372354,
+      "total_usage": 64.188789,
+      "days_active": 1,
+      "estimated_waste": 83.101716,
+      "estimated_monthly_waste": 24.930515,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.99)"
+      ]
+    },
+    {
+      "resource_key": "row:22",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Database",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 137.564674,
+      "total_usage": 69.90695,
+      "days_active": 1,
+      "estimated_waste": 78.817711,
+      "estimated_monthly_waste": 23.645313,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.99)"
+      ]
+    },
+    {
+      "resource_key": "row:2",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 95.869351,
+      "total_usage": 30.15044,
+      "days_active": 1,
+      "estimated_waste": 70.847331,
+      "estimated_monthly_waste": 21.254199,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.99)"
+      ]
+    },
+    {
+      "resource_key": "row:0",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Storage",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 79.615027,
+      "total_usage": 19.160044,
+      "days_active": 1,
+      "estimated_waste": 63.602759,
+      "estimated_monthly_waste": 19.080828,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 1.00)"
+      ]
+    },
+    {
+      "resource_key": "row:8",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Storage",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 111.302761,
+      "total_usage": 63.482724,
+      "days_active": 1,
+      "estimated_waste": 58.249523,
+      "estimated_monthly_waste": 17.474857,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 1.00)"
+      ]
+    },
+    {
+      "resource_key": "row:14",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Compute",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 54.458119,
+      "total_usage": 1.501097,
+      "days_active": 1,
+      "estimated_waste": 53.208746,
+      "estimated_monthly_waste": 15.962624,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.99)"
+      ]
+    },
+    {
+      "resource_key": "row:35",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Compute",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 58.317781,
+      "total_usage": 6.761166,
+      "days_active": 1,
+      "estimated_waste": 52.690417,
+      "estimated_monthly_waste": 15.807125,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 1.00)"
+      ]
+    },
+    {
+      "resource_key": "row:27",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Database",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 52.458786,
+      "total_usage": 5.757833,
+      "days_active": 1,
+      "estimated_waste": 47.620136,
+      "estimated_monthly_waste": 14.286041,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.99)"
+      ]
+    },
+    {
+      "resource_key": "row:16",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Compute",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 51.365535,
+      "total_usage": 9.329857,
+      "days_active": 1,
+      "estimated_waste": 43.600232,
+      "estimated_monthly_waste": 13.08007,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.99)"
+      ]
+    },
+    {
+      "resource_key": "row:12",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 62.270864,
+      "total_usage": 24.48766,
+      "days_active": 1,
+      "estimated_waste": 41.948418,
+      "estimated_monthly_waste": 12.584525,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.99)"
+      ]
+    },
+    {
+      "resource_key": "row:40",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 48.760981,
+      "total_usage": 9.449399,
+      "days_active": 1,
+      "estimated_waste": 40.918871,
+      "estimated_monthly_waste": 12.275661,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.99)"
+      ]
+    },
+    {
+      "resource_key": "row:20",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 84.974204,
+      "total_usage": 55.96488,
+      "days_active": 1,
+      "estimated_waste": 38.528634,
+      "estimated_monthly_waste": 11.55859,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.99)"
+      ]
+    },
+    {
+      "resource_key": "row:10",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 42.002215,
+      "total_usage": 10.273802,
+      "days_active": 1,
+      "estimated_waste": 33.475929,
+      "estimated_monthly_waste": 10.042779,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 1.00)"
+      ]
+    },
+    {
+      "resource_key": "row:30",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Compute",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 30.845098,
+      "total_usage": 1.110852,
+      "days_active": 1,
+      "estimated_waste": 29.920528,
+      "estimated_monthly_waste": 8.976158,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.99)"
+      ]
+    },
+    {
+      "resource_key": "row:31",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 41.739824,
+      "total_usage": 16.705998,
+      "days_active": 1,
+      "estimated_waste": 27.875422,
+      "estimated_monthly_waste": 8.362627,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 1.00)"
+      ]
+    },
+    {
+      "resource_key": "row:17",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 93.755252,
+      "total_usage": 85.776105,
+      "days_active": 1,
+      "estimated_waste": 22.56918,
+      "estimated_monthly_waste": 6.770754,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.99)"
+      ]
+    },
+    {
+      "resource_key": "row:18",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Network",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 50.133496,
+      "total_usage": 34.563949,
+      "days_active": 1,
+      "estimated_waste": 21.44868,
+      "estimated_monthly_waste": 6.434604,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 1.00)"
+      ]
+    },
+    {
+      "resource_key": "row:25",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Database",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 82.868725,
+      "total_usage": 81.201226,
+      "days_active": 1,
+      "estimated_waste": 14.630512,
+      "estimated_monthly_waste": 4.389154,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 1.00)"
+      ]
+    },
+    {
+      "resource_key": "row:15",
+      "resource_id": null,
+      "resource_name": null,
+      "service": "Database",
+      "region": null,
+      "account": null,
+      "unit": null,
+      "total_cost": 55.280071,
+      "total_usage": 58.487976,
+      "days_active": 1,
+      "estimated_waste": 6.129151,
+      "estimated_monthly_waste": 1.838745,
+      "confidence": "Low",
+      "signals": [
+        "ml_outlier"
+      ],
+      "reasons": [
+        "Unusual cost/usage pattern (anomaly score 0.99)"
+      ]
     }
   ],
-  "savings": "$10,040.84",
-  "savings_pct_vs_bau": "23.9%",
-  "total_records": 10000,
-  "total_spend": "$602,631.12",
-  "waste_distribution": "<table border=\"1\" class=\"dataframe table table-sm table-hover\">\n  <thead>\n    <tr>\n      <th>ServiceCategory</th>\n      <th></th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <th>Database</th>\n      <td>$39,159.99</td>\n    </tr>\n    <tr>\n      <th>Network</th>\n      <td>$38,883.26</td>\n    </tr>\n    <tr>\n      <th>Compute</th>\n      <td>$33,485.70</td>\n    </tr>\n    <tr>\n      <th>Storage</th>\n      <td>$31,911.58</td>\n    </tr>\n  </tbody>\n</table>",
-  "zombie_count": "450",
-  "zombie_pct_of_total": "23.8%",
-  "zombie_waste": "$143,440.52",
-  "zombies_preview": "<table border=\"1\" class=\"dataframe table table-striped table-hover align-middle\">\n  <thead>\n    <tr style=\"text-align: right;\">\n      <th>UsageDate</th>\n      <th>ServiceCategory</th>\n      <th>EffectiveCost</th>\n      <th>confidence</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>2024-01-01</td>\n      <td>Database</td>\n      <td>$615.88</td>\n      <td>Low</td>\n    </tr>\n    <tr>\n      <td>2024-01-01</td>\n      <td>Network</td>\n      <td>$320.44</td>\n      <td>Low</td>\n    </tr>\n    <tr>\n      <td>2024-01-01</td>\n      <td>Compute</td>\n      <td>$54.46</td>\n      <td>Medium</td>\n    </tr>\n    <tr>\n      <td>2024-01-01</td>\n      <td>Database</td>\n      <td>$279.35</td>\n      <td>Low</td>\n    </tr>\n    <tr>\n      <td>2024-01-01</td>\n      <td>Database</td>\n      <td>$971.96</td>\n      <td>Low</td>\n    </tr>\n    <tr>\n      <td>2024-01-01</td>\n      <td>Compute</td>\n      <td>$30.85</td>\n      <td>Medium</td>\n    </tr>\n    <tr>\n      <td>2024-01-01</td>\n      <td>Network</td>\n      <td>$242.76</td>\n      <td>High</td>\n    </tr>\n    <tr>\n      <td>2024-01-03</td>\n      <td>Network</td>\n      <td>$224.28</td>\n      <td>High</td>\n    </tr>\n    <tr>\n      <td>2024-01-03</td>\n      <td>Storage</td>\n      <td>$367.20</td>\n      <td>Low</td>\n    </tr>\n    <tr>\n      <td>2024-01-03</td>\n      <td>Compute</td>\n      <td>$144.17</td>\n      <td>High</td>\n    </tr>\n  </tbody>\n</table>"
+  "forecast": {
+    "method": "moving_average_7",
+    "dates": [
+      "2024-04-10",
+      "2024-04-11",
+      "2024-04-12",
+      "2024-04-13",
+      "2024-04-14",
+      "2024-04-15",
+      "2024-04-16"
+    ],
+    "values": [
+      5879.353006,
+      5879.353006,
+      5879.353006,
+      5879.353006,
+      5879.353006,
+      5879.353006,
+      5879.353006
+    ],
+    "lower": [
+      4216.503218,
+      4216.503218,
+      4216.503218,
+      4216.503218,
+      4216.503218,
+      4216.503218,
+      4216.503218
+    ],
+    "upper": [
+      7542.202794,
+      7542.202794,
+      7542.202794,
+      7542.202794,
+      7542.202794,
+      7542.202794,
+      7542.202794
+    ],
+    "backtest_mae": 894.95015
+  },
+  "total_waste": 25922.556671,
+  "waste_percentage": 4.301563,
+  "confidence_summary": {
+    "High": 1,
+    "Medium": 45,
+    "Low": 23
+  }
 }

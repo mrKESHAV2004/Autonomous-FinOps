@@ -29,7 +29,7 @@ jobs:
           cache-dependency-glob: version-5/uv.lock
 
       - name: Install dependencies
-        run: uv sync --frozen --extra dev --python 3.12
+        run: uv sync --frozen --extra dev --extra ml --python 3.12
 
       - name: Lint (ruff)
         run: uv run ruff check .

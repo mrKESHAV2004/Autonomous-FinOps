@@ -20,6 +20,8 @@ import pandas as pd  # noqa: E402
 import seaborn as sns  # noqa: E402
 from matplotlib.figure import Figure  # noqa: E402
 
+from finops_core.models import AnalysisResult  # noqa: E402
+
 COLORS = {
     "primary": "#4F46E5",
     "success": "#10B981",
@@ -33,31 +35,26 @@ TOP_SERVICES = 10
 BASE_FONT_SIZE = 12
 
 
-def generate_plots(
-    daily_costs: pd.Series,
-    forecast: np.ndarray,
-    forecast_lower: np.ndarray,
-    forecast_upper: np.ndarray,
-    zombie_savings: float,
-    zombies: pd.DataFrame,
-    confidence_summary: dict[str, int],
-) -> dict[str, str]:
+def generate_plots(result: AnalysisResult) -> dict[str, str]:
     """Return ``{"main_plot": b64, "zombie_analysis": b64?}``."""
+    daily = pd.Series(result.daily_costs, index=pd.to_datetime(list(result.daily_dates)))
+    fc = result.forecast
     plots: dict[str, str] = {}
     with sns.axes_style("whitegrid"), plt.rc_context():
         plt.rcParams["font.size"] = BASE_FONT_SIZE  # figure sizes are set per figure
         fig = _forecast_and_confidence_figure(
-            daily_costs,
-            forecast,
-            forecast_lower,
-            forecast_upper,
-            zombie_savings,
-            confidence_summary,
+            daily,
+            np.array(fc.values),
+            np.array(fc.lower),
+            np.array(fc.upper),
+            result.total_waste,
+            result.confidence_summary(),
         )
         plots["main_plot"] = _to_base64(fig, tight=True)
 
-        if len(zombies) > 0 and "ServiceCategory" in zombies.columns:
-            plots["zombie_analysis"] = _to_base64(_service_waste_figure(zombies), tight=False)
+        service_waste = pd.Series(result.waste_by_service(), dtype=float)
+        if len(service_waste) > 0:
+            plots["zombie_analysis"] = _to_base64(_service_waste_figure(service_waste), tight=False)
     return plots
 
 
@@ -105,20 +102,15 @@ def _forecast_and_confidence_figure(
     return fig
 
 
-def _service_waste_figure(zombies: pd.DataFrame) -> Figure:
-    service_waste = (
-        zombies.groupby("ServiceCategory")["EffectiveCost"]
-        .sum()
-        .sort_values(ascending=False)
-        .head(TOP_SERVICES)
-    )
+def _service_waste_figure(waste_by_service: pd.Series) -> Figure:
+    service_waste = waste_by_service.sort_values(ascending=False).head(TOP_SERVICES)
     fig, ax = plt.subplots(figsize=(10, 6))
     bar_colors = plt.cm.coolwarm(np.linspace(0.2, 0.8, len(service_waste)))
     bars = ax.barh(range(len(service_waste)), service_waste.to_numpy(), color=bar_colors)
 
     ax.set_yticks(range(len(service_waste)))
     ax.set_yticklabels(service_waste.index)
-    ax.set_xlabel("Waste Amount ($)")
+    ax.set_xlabel("Estimated Waste ($)")
     ax.set_title("Top Wasteful Service Categories", fontsize=14, fontweight="bold")
     ax.grid(True, alpha=0.3, axis="x")
     for i, (_bar, value) in enumerate(zip(bars, service_waste.to_numpy(), strict=True)):

@@ -7,7 +7,8 @@ import pandas as pd
 import pytest
 
 from finops_core.errors import DataValidationError
-from finops_core.preprocessing import DataPreprocessor, validate_columns
+from finops_core.preprocessing import DataPreprocessor
+from finops_core.schema import normalize_columns
 
 
 def test_keeps_only_positive_cost_rows(tmp_path: Path) -> None:
@@ -97,7 +98,7 @@ def test_sampling_limits_rows(make_billing_csv: Callable[..., Path]) -> None:
 
 def test_missing_required_columns_raises_user_safe_error() -> None:
     with pytest.raises(DataValidationError, match="EffectiveCost, ConsumedQuantity"):
-        validate_columns(pd.DataFrame({"Cost": [1]}))
+        normalize_columns(pd.DataFrame({"Date": [1]}))
 
 
 def test_unparseable_file_raises_validation_error(tmp_path: Path) -> None:

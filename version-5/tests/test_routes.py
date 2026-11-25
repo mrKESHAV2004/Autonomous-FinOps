@@ -59,7 +59,7 @@ def test_accepts_uppercase_extension(
     client: FlaskClient, make_billing_csv: Callable[..., Path]
 ) -> None:
     body = _upload(client, make_billing_csv(days=5).read_bytes(), filename="BILLING.CSV")
-    assert "AI-Powered Cloud Waste Analysis Complete" in body
+    assert "Cloud Waste Analysis Complete" in body
 
 
 def test_missing_columns_shows_validation_message(client: FlaskClient) -> None:
@@ -95,7 +95,7 @@ def test_successful_upload_renders_dashboard_and_saves_file(
 ) -> None:
     body = _upload(client, make_billing_csv(days=10).read_bytes())
 
-    assert "AI-Powered Cloud Waste Analysis Complete" in body
+    assert "Cloud Waste Analysis Complete" in body
     assert "data:image/png;base64," in body
     saved = list(Path(config.upload_dir).glob("*_billing.csv"))  # type: ignore[attr-defined]
     assert len(saved) == 1

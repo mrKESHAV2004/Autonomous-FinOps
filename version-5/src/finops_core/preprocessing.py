@@ -1,8 +1,12 @@
 """Billing data loading, cleaning and feature engineering.
 
-Moved from ``ml.py`` (``DataPreprocessor``) with behaviour preserved. The order
-of operations matters: row order after the rolling-window sort feeds the
-Isolation Forests, so helpers run in exactly the original sequence.
+Phase 1 changes from the version-4 behaviour:
+
+* column names are normalised through :mod:`finops_core.schema` (aliases ok);
+* zero/negative-cost rows (credits, free tier) are dropped *before* features
+  are computed, so statistics describe billable rows only;
+* ``UsageMissing`` records rows whose usage was blank before median filling,
+  so "no data" is never mistaken for "zero usage".
 """
 
 from __future__ import annotations
@@ -16,11 +20,10 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 
 from finops_core.errors import DataValidationError
+from finops_core.schema import DATE_COLUMNS, normalize_columns
 
 logger = logging.getLogger(__name__)
 
-DATE_COLUMNS = ("ChargePeriodStart", "UsageDateTime", "BillingPeriodStart", "UsageDate")
-REQUIRED_COLUMNS = ("EffectiveCost", "ConsumedQuantity")
 EPSILON = 1e-6
 ROLLING_WINDOW_DAYS = 7
 START_OF_MONTH_LAST_DAY = 5
@@ -40,7 +43,7 @@ class DataPreprocessor:
         except (pd.errors.ParserError, pd.errors.EmptyDataError, UnicodeDecodeError) as exc:
             raise DataValidationError("The file could not be read as CSV.") from exc
 
-        validate_columns(df)
+        df = normalize_columns(df)
 
         if sample_size and sample_size < len(df):
             df = df.sample(sample_size, random_state=42)
@@ -49,10 +52,10 @@ class DataPreprocessor:
 
         df = self._process_dates(df)
         df = self._clean_numeric_columns(df)
-        df = self._engineer_features(df)
 
-        # Positive costs only: zero-cost rows skew anomaly detection.
-        df_analysis = df[df["EffectiveCost"] > 0].copy()
+        # Billable rows only: zero/negative cost would skew every statistic below.
+        df_analysis = df[df["EffectiveCost"] > 0].reset_index(drop=True)
+        df_analysis = self._engineer_features(df_analysis)
         logger.info("%s records with positive cost kept for analysis", f"{len(df_analysis):,}")
         return df, df_analysis
 
@@ -73,6 +76,7 @@ class DataPreprocessor:
     def _clean_numeric_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         df["EffectiveCost"] = pd.to_numeric(df["EffectiveCost"], errors="coerce")
         df["ConsumedQuantity"] = pd.to_numeric(df["ConsumedQuantity"], errors="coerce")
+        df["UsageMissing"] = df["ConsumedQuantity"].isna()
 
         df["EffectiveCost"] = df["EffectiveCost"].fillna(0)
         has_usage = df["ConsumedQuantity"].notna().any()
@@ -88,21 +92,8 @@ class DataPreprocessor:
         df = _add_outlier_flags(df)
         df = _add_extra_features(df)
 
-        base_cols = {"UsageDate", "ServiceCategory", "EffectiveCost", "ConsumedQuantity"}
-        feature_count = len([col for col in df.columns if col not in base_cols])
-        logger.info("Engineered %d features", feature_count)
+        logger.info("Engineered features for %d rows", len(df))
         return df
-
-
-def validate_columns(df: pd.DataFrame) -> None:
-    """Raise :class:`DataValidationError` if required billing columns are missing."""
-    missing = [col for col in REQUIRED_COLUMNS if col not in df.columns]
-    if missing:
-        raise DataValidationError(
-            "Missing required column(s): "
-            + ", ".join(missing)
-            + ". Expected FOCUS-style billing data."
-        )
 
 
 def _add_cost_usage_features(df: pd.DataFrame) -> pd.DataFrame:

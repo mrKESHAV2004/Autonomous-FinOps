@@ -170,10 +170,16 @@ def _fit_ensemble(
 
 
 def _decision_to_probability(decision: np.ndarray) -> np.ndarray:
-    """Blend a z-score sigmoid with rank percentile to avoid 'all low' outputs."""
-    dec_z = (decision - np.mean(decision)) / (np.std(decision) + 1e-6)
-    prob_sigmoid = 1 / (1 + np.exp(-dec_z))
-    prob_rank = pd.Series(decision).rank(pct=True).to_numpy()
+    """Map IsolationForest decision scores to a 0–1 anomaly probability.
+
+    ``decision_function`` is *lower* for more anomalous rows, so it is negated
+    first (version 4 skipped this, giving the most extreme rows the lowest
+    probability). Blends a z-score sigmoid with rank percentile.
+    """
+    anomalousness = -decision
+    z = (anomalousness - np.mean(anomalousness)) / (np.std(anomalousness) + 1e-6)
+    prob_sigmoid = 1 / (1 + np.exp(-z))
+    prob_rank = pd.Series(anomalousness).rank(pct=True).to_numpy()
     return 0.6 * prob_sigmoid + 0.4 * prob_rank
 
 

@@ -1,61 +1,121 @@
 {
-  "avg_daily_cost": "$0.73",
-  "avg_daily_zombie": "$0.13",
-  "confidence_summary": {
-    "High": 1,
-    "Low": 3,
-    "Medium": 0
+  "analysis_version": "phase1-resource-v1",
+  "records": 48,
+  "resources": 41,
+  "period_start": "2024-09-01",
+  "period_end": "2024-09-30",
+  "period_days": 30,
+  "total_spend": 18.138485,
+  "daily_dates": [
+    "2024-09-01",
+    "2024-09-02",
+    "2024-09-03",
+    "2024-09-04",
+    "2024-09-05",
+    "2024-09-06",
+    "2024-09-07",
+    "2024-09-08",
+    "2024-09-09",
+    "2024-09-10",
+    "2024-09-11",
+    "2024-09-12",
+    "2024-09-13",
+    "2024-09-14",
+    "2024-09-15",
+    "2024-09-16",
+    "2024-09-17",
+    "2024-09-18",
+    "2024-09-19",
+    "2024-09-20",
+    "2024-09-21",
+    "2024-09-22",
+    "2024-09-23",
+    "2024-09-24",
+    "2024-09-25",
+    "2024-09-26",
+    "2024-09-27",
+    "2024-09-28",
+    "2024-09-29",
+    "2024-09-30"
+  ],
+  "daily_costs": [
+    0.0,
+    5.3e-05,
+    5e-06,
+    2.6e-05,
+    0.370968,
+    1e-06,
+    4.6e-05,
+    0.00502,
+    1e-05,
+    2.4e-05,
+    0.000103,
+    2.000642,
+    1.0,
+    2e-06,
+    0.0,
+    0.005005,
+    0.175682,
+    2.000008,
+    1.580891,
+    0.0,
+    0.0,
+    2.0,
+    0.0,
+    3.0,
+    1.0,
+    0.0,
+    2.0,
+    0.0,
+    2.0,
+    1.0
+  ],
+  "findings": [],
+  "forecast": {
+    "method": "moving_average_7",
+    "dates": [
+      "2024-10-01",
+      "2024-10-02",
+      "2024-10-03",
+      "2024-10-04",
+      "2024-10-05",
+      "2024-10-06",
+      "2024-10-07"
+    ],
+    "values": [
+      1.285714,
+      1.285714,
+      1.285714,
+      1.285714,
+      1.285714,
+      1.285714,
+      1.285714
+    ],
+    "lower": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "upper": [
+      3.304823,
+      3.304823,
+      3.304823,
+      3.304823,
+      3.304823,
+      3.304823,
+      3.304823
+    ],
+    "backtest_mae": 0.933271
   },
-  "forecast_bau": "$10.90",
-  "forecast_opt": "$10.02",
-  "insight_detail": [
-    "Analyzed 48 records spanning 25 days",
-    "Detected 4 potential zombie resources",
-    "Identified $1 in 7-day savings opportunity"
-  ],
-  "insight_headline": "AI-Powered Cloud Waste Analysis Complete",
-  "period_days": 25,
-  "plot_keys": [
-    "main_plot",
-    "zombie_analysis"
-  ],
-  "recommendations": [
-    {
-      "action": "Immediate review recommended",
-      "description": "17.2% of total spend is potentially wasteful.",
-      "icon": "bi-exclamation-triangle",
-      "priority": "high",
-      "title": "CRITICAL: Waste Level Detected"
-    },
-    {
-      "action": "Start optimization with Compute resources",
-      "description": "Accounts for $2.76 of total waste.",
-      "icon": "bi-funnel",
-      "priority": "high",
-      "title": "Focus Area: Compute"
-    },
-    {
-      "action": "Implement recommendations within 48 hours",
-      "description": "$1 in 7 days ($4 monthly).",
-      "icon": "bi-cash-coin",
-      "priority": "high",
-      "title": "Significant Savings Potential"
-    },
-    {
-      "action": "Review high confidence items first",
-      "description": "1 resources with high confidence of being wasteful.",
-      "icon": "bi-shield-check",
-      "priority": "medium",
-      "title": "High Confidence Detections"
-    }
-  ],
-  "savings": "$0.88",
-  "savings_pct_vs_bau": "8.0%",
-  "total_records": 48,
-  "total_spend": "$18.14",
-  "waste_distribution": "<table border=\"1\" class=\"dataframe table table-sm table-hover\">\n  <thead>\n    <tr>\n      <th>ServiceCategory</th>\n      <th></th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <th>Compute</th>\n      <td>$2.76</td>\n    </tr>\n    <tr>\n      <th>Databases</th>\n      <td>$0.37</td>\n    </tr>\n  </tbody>\n</table>",
-  "zombie_count": "4",
-  "zombie_pct_of_total": "17.2%",
-  "zombie_waste": "$3.13",
-  "zombies_preview": "<table border=\"1\" class=\"dataframe table table-striped table-hover align-middle\">\n  <thead>\n    <tr style=\"text-align: right;\">\n      <th>UsageDate</th>\n      <th>ServiceCategory</th>\n      <th>EffectiveCost</th>\n      <th>confidence</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>2024-09-05</td>\n      <td>Databases</td>\n      <td>$0.37</td>\n      <td>Low</td>\n    </tr>\n    <tr>\n      <td>2024-09-17</td>\n      <td>Compute</td>\n      <td>$0.18</td>\n      <td>Low</td>\n    </tr>\n    <tr>\n      <td>2024-09-19</td>\n      <td>Compute</td>\n      <td>$1.58</td>\n      <td>Low</td>\n    </tr>\n    <tr>\n      <td>2024-09-24</td>\n      <td>Compute</td>\n      <td>$1.00</td>\n      <td>High</td>\n    </tr>\n  </tbody>\n</table>"
+  "total_waste": 0.0,
+  "waste_percentage": 0.0,
+  "confidence_summary": {
+    "High": 0,
+    "Medium": 0,
+    "Low": 0
+  }
 }

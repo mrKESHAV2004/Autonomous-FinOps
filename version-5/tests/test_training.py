@@ -27,6 +27,39 @@ def test_pipeline_saves_detector_and_metadata(
     assert meta["zombie_count"] == result["zombie_count"]
 
 
+def test_pipeline_works_without_tensorflow(
+    make_billing_csv: Callable[..., Path], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(training, "tensorflow_available", lambda: False)
+    out = tmp_path / "artifacts"
+
+    result = training.main_training_pipeline(str(make_billing_csv(days=30)), str(out))
+
+    assert result["success"] is True
+    assert result["lstm_trained"] is False
+    assert result["forecast_total"] > 0  # falls back to the baseline forecast
+    comparison = json.loads((out / "training_metadata.json").read_text())["forecast_comparison"]
+    assert comparison["baseline_backtest_mae"] is not None
+    assert comparison["lstm_backtest_mae"] is None
+    assert comparison["lstm_beats_baseline"] is None
+
+
+@pytest.mark.slow
+def test_lstm_is_backtested_against_baseline(tmp_path: Path) -> None:
+    pytest.importorskip("tensorflow")
+    data = training.generate_demo_data(tmp_path / "demo.csv")
+    out = tmp_path / "artifacts"
+
+    result = training.main_training_pipeline(str(data), str(out))
+
+    assert result["success"] is True
+    assert result["lstm_trained"] is True
+    assert (out / "forecast_lstm.keras").exists()
+    comparison = json.loads((out / "training_metadata.json").read_text())["forecast_comparison"]
+    assert comparison["lstm_backtest_mae"] > 0
+    assert isinstance(comparison["lstm_beats_baseline"], bool)
+
+
 def test_pipeline_reports_bad_data(tmp_path: Path) -> None:
     bad = tmp_path / "bad.csv"
     bad.write_text("a,b\n1,2\n")

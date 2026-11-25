@@ -84,7 +84,6 @@ dependencies = [
     { name = "pandas" },
     { name = "scikit-learn" },
     { name = "seaborn" },
-    { name = "tensorflow" },
 ]
 
 [package.optional-dependencies]
@@ -97,6 +96,9 @@ dev = [
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "ruff" },
+]
+ml = [
+    { name = "tensorflow" },
 ]
 
 [package.metadata]
@@ -116,9 +118,9 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6" },
     { name = "scikit-learn", specifier = ">=1.4,<2" },
     { name = "seaborn", specifier = ">=0.13,<0.14" },
-    { name = "tensorflow", specifier = ">=2.16,<2.19" },
+    { name = "tensorflow", marker = "extra == 'ml'", specifier = ">=2.16,<2.19" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["ml", "dev"]
 
 [[package]]
 name = "bandit"

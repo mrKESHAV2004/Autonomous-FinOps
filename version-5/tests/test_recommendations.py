@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-import pandas as pd
 import pytest
 
+from factories import finding
 from finops_core.recommendations import generate_recommendations
 
-ZOMBIES = pd.DataFrame(
-    {
-        "ServiceCategory": ["Compute", "Compute", "Storage"],
-        "EffectiveCost": [100.0, 50.0, 20.0],
-        "confidence": ["High", "Low", "High"],
-    }
+FINDINGS = (
+    finding(resource_key="a", service="Compute", estimated_waste=100.0, confidence="High"),
+    finding(resource_key="b", service="Compute", estimated_waste=50.0, confidence="Low"),
+    finding(resource_key="c", service="Storage", estimated_waste=20.0, confidence="High"),
 )
 
 
@@ -23,31 +21,36 @@ ZOMBIES = pd.DataFrame(
     ],
 )
 def test_severity_thresholds(waste_pct: float, title: str, priority: str) -> None:
-    first = generate_recommendations(pd.DataFrame(), 0, waste_pct, 0)[0]
+    first = generate_recommendations((), waste_pct, 0)[0]
     assert first["title"] == title
     assert first["priority"] == priority
 
 
-def test_all_four_cards_when_everything_applies() -> None:
-    recs = generate_recommendations(ZOMBIES, 170.0, 12.0, forecast_savings=70.0)
+def test_cards_in_priority_order() -> None:
+    recs = generate_recommendations(FINDINGS, 12.0, forecast_savings=70.0)
 
-    titles = [r["title"] for r in recs]
-    assert titles == [
+    assert [r["title"] for r in recs] == [
         "CRITICAL: Waste Level Detected",
         "Focus Area: Compute",
         "Significant Savings Potential",
         "High Confidence Detections",
     ]
-    assert recs[1]["description"] == "Accounts for $150.00 of total waste."
+    assert recs[1]["description"] == "Accounts for $150.00 of estimated waste."
     assert recs[2]["description"] == "$70 in 7 days ($300 monthly)."
-    assert recs[3]["description"] == "2 resources with high confidence of being wasteful."
+    assert recs[3]["description"] == "2 resources with strong evidence of waste."
 
 
-def test_only_severity_card_without_zombies_or_savings() -> None:
-    assert len(generate_recommendations(pd.DataFrame(), 0, 0, 0)) == 1
+def test_idle_card_when_idle_resources_found() -> None:
+    idle = (finding(signals=("idle",), estimated_waste=40.0, confidence="High"),)
+    titles = [r["title"] for r in generate_recommendations(idle, 1.0, 0)]
+    assert "1 Idle Resource" in titles
+
+
+def test_only_severity_card_without_findings_or_savings() -> None:
+    assert len(generate_recommendations((), 0, 0)) == 1
 
 
 def test_no_high_confidence_card_when_none_are_high() -> None:
-    low = ZOMBIES.assign(confidence="Low")
-    titles = [r["title"] for r in generate_recommendations(low, 1, 1, 0)]
+    low = tuple(finding(resource_key=k, confidence="Low") for k in "xy")
+    titles = [r["title"] for r in generate_recommendations(low, 1, 0)]
     assert "High Confidence Detections" not in titles

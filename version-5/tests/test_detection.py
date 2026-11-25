@@ -58,21 +58,19 @@ def test_flags_injected_expensive_idle_rows(make_billing_csv: Callable[..., Path
     assert (zombies["EffectiveCost"] >= 25_000).sum() == 3
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "Known version-4 bug kept for result parity in Phase 0: anomaly_probability is "
-        "inverted (IsolationForest.decision_function is LOWER for more anomalous rows, "
-        "but _decision_to_probability maps higher scores to higher probability), so the "
-        "most extreme zombies get Low confidence. Fix in Phase 1 and drop this marker."
-    ),
-)
 def test_most_extreme_zombies_get_high_confidence(make_billing_csv: Callable[..., Path]) -> None:
+    # Regression test for the version-4 bug where anomaly_probability was inverted.
     df = _analysed(make_billing_csv(days=20, rows_per_day=30, extra_rows=IDLE_ROWS))
 
-    zombies = OptimizedZombieDetector().detect_anomalies(df)["zombies"]
+    result = OptimizedZombieDetector().detect_anomalies(df)
+    zombies, scored = result["zombies"], result["df_with_scores"]
 
-    assert set(zombies.loc[zombies["EffectiveCost"] >= 25_000, "confidence"]) <= {"High", "Medium"}
+    assert set(zombies.loc[zombies["EffectiveCost"] >= 25_000, "confidence"]) == {"High"}
+    extreme = scored["EffectiveCost"] >= 25_000
+    assert (
+        scored.loc[extreme, "anomaly_probability"].min()
+        > scored.loc[~extreme, "anomaly_probability"].median()
+    )
 
 
 def test_falls_back_to_two_features_when_few_available() -> None:

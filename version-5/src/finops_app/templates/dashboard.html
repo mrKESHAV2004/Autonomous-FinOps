@@ -528,8 +528,8 @@
                         </div>
                         <p class="text-muted small mt-3">
                             <i class="bi bi-info-circle me-1" style="color: var(--info-color);"></i>
-                            High confidence = 70%+ probability of waste<br>
-                            Review high confidence items first for maximum impact
+                            High = idle (zero usage), or overpriced and flagged by the ML model<br>
+                            Medium = priced far above similar resources · Low = ML flag only
                         </p>
                     </div>
                 </div>
@@ -594,11 +594,11 @@
                             <div class="col-md-6">
                                 <dl class="mb-0">
                                     <dt class="glossary-term">Zombie Waste</dt>
-                                    <dd>Resources showing anomalous cost vs usage patterns, likely idle or over-provisioned.</dd>
+                                    <dd>Estimated cost of resources that are idle or priced far above similar resources (cost above the peer median, not the whole bill).</dd>
                                     <dt class="glossary-term">BAU Forecast</dt>
                                     <dd>Business-as-usual projection assuming current patterns continue.</dd>
                                     <dt class="glossary-term">Confidence Level</dt>
-                                    <dd>AI model's certainty in zombie detection (High/Medium/Low).</dd>
+                                    <dd>How much evidence supports a finding: High, Medium or Low, based on which signals fired.</dd>
                                 </dl>
                             </div>
                             <div class="col-md-6">

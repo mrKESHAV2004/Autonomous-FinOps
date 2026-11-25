@@ -1,11 +1,10 @@
-"""Rule-based recommendation cards shown on the dashboard.
-
-Moved from ``interface.py`` (``generate_recommendations``) unchanged in logic.
-"""
+"""Rule-based recommendation cards shown on the dashboard, built from findings."""
 
 from __future__ import annotations
 
-import pandas as pd
+from collections.abc import Sequence
+
+from finops_core.models import SIGNAL_IDLE, Finding
 
 CRITICAL_WASTE_PCT = 10
 HIGH_WASTE_PCT = 5
@@ -16,35 +15,19 @@ Recommendation = dict[str, str]
 
 
 def generate_recommendations(
-    zombies: pd.DataFrame,
-    total_waste: float,
+    findings: Sequence[Finding],
     waste_percentage: float,
     forecast_savings: float,
 ) -> list[Recommendation]:
-    """Return 1–4 recommendation cards, most important first."""
-    del total_waste  # kept in the signature for compatibility; not used by any rule
-    recommendations = [_severity_card(waste_percentage)]
-
-    top_service = _top_service_card(zombies)
-    if top_service:
-        recommendations.append(top_service)
-
-    if forecast_savings > 0:
-        monthly = forecast_savings * DAYS_PER_MONTH / FORECAST_DAYS
-        recommendations.append(
-            {
-                "priority": "high",
-                "icon": "bi-cash-coin",
-                "title": "Significant Savings Potential",
-                "description": f"${forecast_savings:,.0f} in 7 days (${monthly:,.0f} monthly).",
-                "action": "Implement recommendations within 48 hours",
-            }
-        )
-
-    high_confidence = _high_confidence_card(zombies)
-    if high_confidence:
-        recommendations.append(high_confidence)
-    return recommendations
+    """Return 1–5 recommendation cards, most important first."""
+    cards: list[Recommendation | None] = [
+        _severity_card(waste_percentage),
+        _idle_card(findings),
+        _top_service_card(findings),
+        _savings_card(forecast_savings),
+        _high_confidence_card(findings),
+    ]
+    return [card for card in cards if card is not None]
 
 
 def _severity_card(waste_percentage: float) -> Recommendation:
@@ -58,39 +41,64 @@ def _severity_card(waste_percentage: float) -> Recommendation:
         "priority": priority,
         "icon": icon,
         "title": f"{severity}: Waste Level Detected",
-        "description": f"{waste_percentage:.1f}% of total spend is potentially wasteful.",
+        "description": f"{waste_percentage:.1f}% of total spend is estimated waste.",
         "action": (
             "Immediate review recommended" if priority == "high" else "Schedule review this week"
         ),
     }
 
 
-def _top_service_card(zombies: pd.DataFrame) -> Recommendation | None:
-    if len(zombies) == 0 or "ServiceCategory" not in zombies.columns:
+def _idle_card(findings: Sequence[Finding]) -> Recommendation | None:
+    idle = [f for f in findings if SIGNAL_IDLE in f.signals]
+    if not idle:
         return None
-    service_waste = zombies.groupby("ServiceCategory")["EffectiveCost"].sum()
-    if len(service_waste) == 0:
+    cost = sum(f.estimated_waste for f in idle)
+    return {
+        "priority": "high",
+        "icon": "bi-power",
+        "title": f"{len(idle)} Idle Resource{'s' if len(idle) != 1 else ''}",
+        "description": f"Billed ${cost:,.2f} with zero recorded usage.",
+        "action": "Confirm with owners, then stop or delete them",
+    }
+
+
+def _top_service_card(findings: Sequence[Finding]) -> Recommendation | None:
+    if not findings:
         return None
-    top_service = service_waste.idxmax()
+    by_service: dict[str, float] = {}
+    for f in findings:
+        by_service[f.service] = by_service.get(f.service, 0.0) + f.estimated_waste
+    top_service, top_waste = max(by_service.items(), key=lambda kv: (kv[1], kv[0]))
     return {
         "priority": "high",
         "icon": "bi-funnel",
         "title": f"Focus Area: {top_service}",
-        "description": f"Accounts for ${service_waste.max():,.2f} of total waste.",
+        "description": f"Accounts for ${top_waste:,.2f} of estimated waste.",
         "action": f"Start optimization with {top_service} resources",
     }
 
 
-def _high_confidence_card(zombies: pd.DataFrame) -> Recommendation | None:
-    if len(zombies) == 0 or "confidence" not in zombies.columns:
+def _savings_card(forecast_savings: float) -> Recommendation | None:
+    if forecast_savings <= 0:
         return None
-    high_conf = int((zombies["confidence"] == "High").sum())
-    if high_conf == 0:
+    monthly = forecast_savings * DAYS_PER_MONTH / FORECAST_DAYS
+    return {
+        "priority": "high",
+        "icon": "bi-cash-coin",
+        "title": "Significant Savings Potential",
+        "description": f"${forecast_savings:,.0f} in 7 days (${monthly:,.0f} monthly).",
+        "action": "Implement recommendations within 48 hours",
+    }
+
+
+def _high_confidence_card(findings: Sequence[Finding]) -> Recommendation | None:
+    high = sum(1 for f in findings if f.confidence == "High")
+    if high == 0:
         return None
     return {
         "priority": "medium",
         "icon": "bi-shield-check",
         "title": "High Confidence Detections",
-        "description": f"{high_conf} resources with high confidence of being wasteful.",
+        "description": f"{high} resources with strong evidence of waste.",
         "action": "Review high confidence items first",
     }
