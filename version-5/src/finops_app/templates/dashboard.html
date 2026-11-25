@@ -4,659 +4,153 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FinOps Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --bg: #090d14;
-            --panel: rgba(24, 30, 43, 0.97);
-            --border: rgba(222, 255, 154, 0.20);
-            --accent: #b5ff3c;
-            --primary-color: #eaffb0;
-            --success-color: #1ad697;
-            --danger-color: #ff2684;
-            --warning-color: #fecf4d;
-            --info-color: #31cfff;
-            --text: #f8fafc;
-            --muted: #b9e1cb;
-            --heading: #eaffb0;
-            --label: #93ff52;
-            --secondary: #c2ffd6;
-            --highlight: #262f47;
-        }
-        body {
-            background: linear-gradient(120deg, #0a1417 0%, #19192a 100%);
-            min-height: 100vh;
-            color: var(--text) !important;
-            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-            background-attachment: fixed;
-        }
-        * {
-            text-shadow: 0 1px 2px rgba(0,0,0,0.15);
-            box-sizing: border-box;
-        }
-        .dashboard-container {
-            background: var(--panel);
-            border-radius: 26px;
-            border: 1.3px solid var(--border);
-            box-shadow: 0 12px 44px 0 rgba(0, 0, 0, 0.45);
-            margin: 36px auto 32px auto;
-            max-width: 1180px;
-            padding: 0;
-            overflow: hidden;
-        }
-        .dashboard-header {
-            background: linear-gradient(102deg, rgba(222,255,154,0.14) 8%, rgba(49,207,255,0.16) 100%);
-            color: var(--heading);
-            padding: 2.75rem 2.3rem 2.1rem 2.3rem;
-            margin-bottom: 1.8rem;
-            border-bottom: 1.5px solid var(--border);
-        }
-        .dashboard-header h1 {
-            color: var(--heading) !important;
-            letter-spacing: -.5px;
-        }
-        .dashboard-header p.lead {
-            color: var(--muted) !important;
-            opacity: .98;
-            font-size: 1.18rem;
-            margin-bottom: 0.05rem;
-            letter-spacing: .01em;
-        }
-        .dashboard-header .btn-lg {
-            box-shadow: 0 2px 18px 0 rgba(222,255,154,0.10);
-            border-radius: 14px;
-            font-weight: 700;
-            transition: background 0.2s;
-        }
-        .dashboard-header .btn-lg:hover {
-            background: var(--highlight) !important;
-            color: var(--primary-color) !important;
-        }
-        .container-fluid.py-4 {
-            padding: 2.5rem 1rem 2.5rem 1rem !important;
-        }
-        /* Metrics grid improvements */
-        .metric-card {
-            background: linear-gradient(115deg, rgba(255,255,255,0.04) 0%, rgba(34,255,184,0.035) 100%);
-            border-radius: 19px;
-            border: 1.2px solid var(--border);
-            padding: 1.60rem 1.35rem 1.25rem 1.35rem;
-            margin-bottom: 0;
-            box-shadow: 0 2px 24px 0 rgba(34,55,84,0.10);
-            transition: transform 0.2s cubic-bezier(.39,.15,.31,1.1), box-shadow 0.22s;
-            opacity: 0;
-            transform: translateY(25px) scale(0.99);
-            min-height: 154px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            position: relative;
-        }
-        .metric-card:hover {
-            transform: translateY(-5px) scale(1.018);
-            box-shadow: 0 6px 28px 0 rgba(94,255,184,0.09), 0 0px 0 rgba(255,255,255,0.00);
-            border-color: var(--accent);
-            z-index: 2;
-        }
-        .metric-label {
-            font-weight: 600;
-            color: var(--muted) !important;
-            font-size: 1.02rem;
-            margin-bottom: 0.38rem;
-        }
-        .metric-value {
-            font-size: 2.25rem;
-            font-weight: 900;
-            line-height: 2.5rem;
-            letter-spacing: -1px;
-            margin-bottom: .22rem;
-            transition: color .21s;
-        }
-        .metric-card.danger .metric-value { 
-            color: var(--danger-color);
-        }
-        .metric-card.success .metric-value { 
-            color: var(--success-color);
-        }
-        .metric-card.warning .metric-value { 
-            color: var(--warning-color);
-        }
-        .metric-card.info .metric-value { 
-            color: var(--info-color);
-        }
-        .metric-card small.text-muted {
-            color: var(--muted) !important;
-            opacity: 0.88;
-            font-size: .98rem;
-        }
-        /* Insight Card */
-        .insight-card {
-            background: linear-gradient(110deg, rgba(245,231,142,0.08) 0%, rgba(46,209,150,0.09) 100%);
-            border-radius: 14px;
-            border: 1.5px solid var(--border);
-            margin-bottom: 2.3rem;
-            padding: 1.6rem 1.6rem 1.4rem 1.6rem;
-            box-shadow: 0 1px 13px 0 rgba(246,255,210,0.04);
-        }
-        .insight-card h4 {
-            color: var(--warning-color) !important;
-            letter-spacing: .5px;
-            margin-bottom: .6rem;
-        }
-        .insight-card h5 {
-            color: var(--danger-color) !important;
-            margin-bottom: .85rem;
-        }
-        .insight-card .bi-check-circle-fill {
-            font-size: 1.3rem;
-            vertical-align: -0.08em;
-            color: var(--success-color) !important;
-        }
-        /* Plot containers - visualization improvements */
-        .plot-container {
-            background: linear-gradient(106deg, rgba(255,255,255,0.06) 0%, rgba(65,246,255,0.06) 100%);
-            border-radius: 18px;
-            padding: 2rem 2rem 1.65rem 2rem;
-            box-shadow: 0 3px 21px 0 rgba(40,128,104,0.06);
-            margin-bottom: 2.1rem;
-            border: 1.4px solid var(--border);
-            color: var(--text) !important;
-        }
-        .plot-container h4 {
-            color: var(--primary-color) !important;
-        }
-        .plot-container .table th, 
-        .plot-container .table td {
-            vertical-align: middle;
-        }
-        /* Recommendation cards */
-        .recommendation-card {
-            background: linear-gradient(104deg, rgba(222,255,154,0.06) 0%, rgba(16,185,129,0.091) 100%);
-            border-radius: 12.5px;
-            margin-bottom: 1.1rem;
-            box-shadow: 0 1.5px 7px 0 rgba(255,255,255,0.04);
-            border-left: 4px solid var(--accent);
-            border-top: 1px solid var(--border);
-            padding: 1.25rem 1.2rem 1.1rem 1.2rem;
-            transition: all 0.23s cubic-bezier(.54,.06,.35,1.13);
-        }
-        .recommendation-card:hover {
-            border-left-color: var(--primary-color);
-            transform: translateY(-3px) scale(1.0105);
-            z-index: 1;
-        }
-        .recommendation-card .badge {
-            font-size: .87rem;
-            letter-spacing: .02em;
-            padding: 0.35em 0.95em 0.34em 0.95em;
-        }
-        /* Custom badge hues for priorities */
-        .badge.bg-high { background: #f74e69 !important; color: #fff !important;}
-        .badge.bg-medium { background: #f6df4d !important; color: #564301 !important;}
-        .badge.bg-low { background: #38bdff !important; color: #fff !important;}
-        /* Confidence badges & breakdown boxes */
-        .confidence-badge { padding: 0.26rem 1.1rem; border-radius: 22px; font-size: 0.95rem; font-weight: 700; display: inline-block;}
-        .confidence-high { background: #f74e69; color: #fff !important; }
-        .confidence-medium { background: #f6df4d; color: #564301 !important;}
-        .confidence-low { background: #38bdff; color: #fff !important;}
-        /* Table themed improvements */
-        .table {
-            color: var(--text) !important;
-            background-color: transparent !important;
-            border-radius: 8px;
-        }
-        .table thead th {
-            color: var(--primary-color) !important;
-            background: rgba(222,255,154,0.11) !important;
-            border-bottom: 2.1px solid var(--border) !important;
-        }
-        .table-striped>tbody>tr:nth-of-type(odd) { background-color: rgba(255,255,255,0.025) !important;}
-        .table-striped>tbody>tr:nth-of-type(even) { background-color: rgba(255,255,255,0.055) !important;}
-        .table-hover tbody tr:hover {
-            background-color: #eaffe7 !important;
-            color: #09403c !important;
-        }
-        .table-hover tbody tr:hover td { color: #0e433f !important; }
-        /* Savings highlight segment */
-        .savings-highlight {
-            background:linear-gradient(105deg, rgba(222,255,154,0.23) 0%, rgba(49,207,255,0.12) 100%);
-            color: var(--primary-color) !important;
-            padding: 1.65rem 0.5rem 1.67rem 0.5rem;
-            border-radius: 17.5px;
-            text-align: center;
-            margin: 2.1rem 0 2.0rem 0;
-            box-shadow: 0 12px 38px rgba(55,255,186,0.09);
-            border: 1.4px solid var(--border);
-        }
-        .savings-highlight h4 {
-            color: var(--accent) !important;
-            margin-bottom: 1.4rem;
-        }
-        .savings-highlight .fw-bold {
-            font-size: 2.09rem !important;
-            color: var(--primary-color) !important;
-        }
-        .savings-highlight small {
-            color: var(--muted) !important;
-            font-size:1.05rem;
-        }
-        /* Glossary improvements */
-        .glossary-term {
-            color: var(--accent) !important;
-            font-weight: 700;
-            padding: 0.18rem 0;
-            border-bottom: 2.2px solid var(--accent);
-            font-size: 1.08rem;
-            margin-bottom: 3px;
-            display: inline-block;
-        }
-        .glossary-term + dd {
-            color: var(--muted) !important;
-            font-size:1.07rem;
-            margin-bottom: 1.1rem;
-        }
-        dd {
-            color: var(--muted) !important;
-            margin-bottom: 1.07rem;
-        }
-        /* Footer improvements */
-        footer {
-            color: var(--muted) !important;
-        }
-        footer p, footer span {
-            color: var(--muted) !important;
-            font-size: 1rem;
-        }
-        .bi {
-            color: var(--primary-color) !important;
-        }
-        /* Responsive tweaks */
-        @media (max-width: 900px) {
-            .dashboard-container {max-width: 98vw;}
-            .dashboard-header {padding: 1.5rem 1rem;}
-            .plot-container, .insight-card { padding: 1.1rem !important;}
-        }
-        @media (max-width: 768px) {
-            .dashboard-header, .container-fluid.py-4 {padding: 1.0rem !important;}
-            .plot-container, .insight-card { padding: 1rem 0.7rem !important;}
-        }
-        /* Spinner for loading overlay */
-        .spinner {
-            width: 48px;
-            height: 48px;
-            border: 6px solid var(--accent);
-            border-top: 6px solid transparent;
-            border-radius: 50%;
-            animation: spin 0.85s linear infinite;
-            margin: 0 auto;
-        }
-        @keyframes spin {
-            100% {transform: rotate(360deg);}
-        }
-        .loading-overlay {
-            position: fixed;
-            top:0;left:0;right:0;bottom:0;
-            z-index: 9999;
-            background: rgba(15,29,29,0.96);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .loading-overlay h4,
-        .loading-overlay p {
-            color: var(--primary-color) !important;
-        }
-    </style>
+    <meta name="description" content="Wasteful cloud resources found in your billing file, with the reason for each and a 7-day spend forecast.">
+    <link rel="preconnect" href="https://api.fontshare.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 </head>
 <body>
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
-        <div class="text-center">
-            <div class="spinner mb-3"></div>
-            <h4>Analyzing Your Cloud Data...</h4>
-            <p class="text-muted">This may take a moment</p>
+    <header class="topbar">
+        <div class="container topbar__inner">
+            <a class="wordmark" href="/" aria-label="FinOps.AI home">FinOps.AI</a>
+            <a href="/upload" class="btn btn--ink">Analyze new dataset</a>
         </div>
-    </div>
+    </header>
 
-    <div class="container dashboard-container shadow-lg">
-        <!-- Header -->
-        <div class="dashboard-header">
-            <div class="row align-items-center">
-                <div class="col-md-8 col-12">
-                    <h1 class="display-5 fw-bold mb-3">
-                        <i class="bi bi-graph-up-arrow" style="color: var(--primary-color);"></i> Autonomous FinOps Engine
-                    </h1>
-                    <p class="lead mb-0">AI-powered cloud cost optimization &amp; waste detection</p>
-                </div>
-                <div class="col-md-4 col-12 text-md-end text-start mt-3 mt-md-0">
-                    <a href="/" class="btn btn-light btn-lg px-4 shadow-sm" style="color: var(--bg); border-color: var(--primary-color);">
-                        <i class="bi bi-upload"></i> Analyze New Dataset
-                    </a>
-                </div>
+    <main class="container">
+        <section class="page-head" aria-labelledby="page-title">
+            <div>
+                <h1 id="page-title">Autonomous FinOps Engine</h1>
+                <p class="lead">AI-powered cloud cost optimization &amp; waste detection</p>
+                <p class="page-head__meta">Analysis completed {{ results.analysis_time }}</p>
             </div>
-        </div>
+        </section>
 
-        <div class="container-fluid py-4">
-            <!-- Key Metrics -->
-            <div class="row mb-4">
-                <div class="col-md-3 col-6 mb-3">
-                    <div class="metric-card">
-                        <div class="metric-label">
-                            <i class="bi bi-cash-stack me-2"></i>Total Spend
-                        </div>
-                        <div class="metric-value">{{ results.total_spend }}</div>
-                        <small class="text-muted">Across {{ results.period_days }} days</small>
-                    </div>
-                </div>
-                <div class="col-md-3 col-6 mb-3">
-                    <div class="metric-card danger">
-                        <div class="metric-label">
-                            <i class="bi bi-robot me-2"></i>Zombie Waste
-                        </div>
-                        <div class="metric-value">{{ results.zombie_waste }}</div>
-                        <small class="text-muted">{{ results.zombie_count }} resources</small>
-                    </div>
-                </div>
-                <div class="col-md-3 col-6 mb-3">
-                    <div class="metric-card warning">
-                        <div class="metric-label">
-                            <i class="bi bi-pie-chart me-2"></i>Waste Share
-                        </div>
-                        <div class="metric-value">{{ results.zombie_pct_of_total }}</div>
-                        <small class="text-muted">Of historical spend</small>
-                    </div>
-                </div>
-                <div class="col-md-3 col-6 mb-3">
-                    <div class="metric-card success">
-                        <div class="metric-label">
-                            <i class="bi bi-currency-dollar me-2"></i>Potential Savings
-                        </div>
-                        <div class="metric-value">{{ results.savings }}</div>
-                        <small class="text-muted">Next 7 days</small>
-                    </div>
-                </div>
-            </div>
-            <!-- Forecast Metrics -->
-            <div class="row mb-4">
-                <div class="col-md-3 col-6 mb-3">
-                    <div class="metric-card">
-                        <div class="metric-label">
-                            <i class="bi bi-graph-up me-2"></i>BAU Forecast
-                        </div>
-                        <div class="metric-value">{{ results.forecast_bau }}</div>
-                        <small class="text-muted">7-day projection</small>
-                    </div>
-                </div>
-                <div class="col-md-3 col-6 mb-3">
-                    <div class="metric-card success">
-                        <div class="metric-label">
-                            <i class="bi bi-graph-down me-2"></i>Optimized Forecast
-                        </div>
-                        <div class="metric-value">{{ results.forecast_opt }}</div>
-                        <small class="text-muted">After optimization</small>
-                    </div>
-                </div>
-                <div class="col-md-3 col-6 mb-3">
-                    <div class="metric-card info">
-                        <div class="metric-label">
-                            <i class="bi bi-speedometer2 me-2"></i>Savings %
-                        </div>
-                        <div class="metric-value">{{ results.savings_pct_vs_bau }}</div>
-                        <small class="text-muted">Reduction vs BAU</small>
-                    </div>
-                </div>
-                <div class="col-md-3 col-6 mb-3">
-                    <div class="metric-card warning">
-                        <div class="metric-label">
-                            <i class="bi bi-calendar-day me-2"></i>Daily Waste
-                        </div>
-                        <div class="metric-value">{{ results.avg_daily_zombie }}</div>
-                        <small class="text-muted">Average per day</small>
-                    </div>
-                </div>
-            </div>
-            <!-- Insights -->
-            <div class="insight-card mb-4">
-                <h4 class="fw-bold mb-3">
-                    <i class="bi bi-lightbulb text-warning me-2"></i>Key Insights
-                </h4>
-                <h5 class="fw-bold mb-2">{{ results.insight_headline }}</h5>
-                <div class="row gx-3">
-                    {% for detail in results.insight_detail %}
-                    <div class="col-md-4 col-sm-6 mb-2">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-check-circle-fill text-success me-2"></i>
-                            <span style="color: var(--success-color);">{{ detail }}</span>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            <!-- Visualizations -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="plot-container">
-                        <h4 class="fw-bold mb-3">
-                            <i class="bi bi-bar-chart text-primary me-2"></i>Cost Forecast & Optimization
-                        </h4>
-                        <div class="text-center pb-1 bg-black bg-opacity-10 rounded-5">
-                            <img src="data:image/png;base64,{{ results.plots.main_plot }}" class="img-fluid rounded-3 shadow-sm border" style="max-height: 440px;"/>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% if results.plots.zombie_analysis %}
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="plot-container">
-                        <h4 class="fw-bold mb-3">
-                            <i class="bi bi-tools text-danger me-2"></i>Waste Distribution by Service
-                        </h4>
-                        <div class="text-center pb-1 bg-black bg-opacity-10 rounded-5">
-                            <img src="data:image/png;base64,{{ results.plots.zombie_analysis }}" class="img-fluid rounded-3 shadow-sm border" style="max-height: 340px;"/>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-            <!-- Recommendations -->
-            {% if results.recommendations %}
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="plot-container">
-                        <h4 class="fw-bold mb-3">
-                            <i class="bi bi-list-check text-primary me-2"></i>Actionable Recommendations
-                        </h4>
-                        <div class="row gx-3">
-                            {% for rec in results.recommendations %}
-                            <div class="col-md-6 mb-3">
-                                <div class="recommendation-card priority-{{ rec.priority }}">
-                                    <div class="d-flex align-items-start mb-2">
-                                        <i class="{{ rec.icon }} fs-4 me-3 mt-1" style="color: var(--primary-color);"></i>
-                                        <div class="flex-grow-1">
-                                            <div class="d-flex justify-content-between align-items-start">
-                                                <h6 class="fw-bold mb-0" style="color: var(--primary-color); font-size:1.13rem;">{{ rec.title }}</h6>
-                                                <span class="badge bg-{{ rec.priority }} rounded-pill fs-6 ">{{ rec.priority|upper }}</span>
-                                            </div>
-                                            <p class="text-muted small mb-2 mt-2" style="color: var(--muted)!important;">
-                                                {{ rec.description }}
-                                            </p>
-                                            <p class="mb-0"><strong style="color: var(--primary-color);">Action:</strong>
-                                                <span style="color: var(--text);">{{ rec.action }}</span>
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-            <!-- Confidence Analysis & Waste Categories Row -->
-            <div class="row mb-4">
-                <div class="col-md-6 mb-3 mb-md-0">
-                    <div class="plot-container h-100">
-                        <h4 class="fw-bold mb-3">
-                            <i class="bi bi-shield-check text-warning me-2"></i>Detection Confidence
-                        </h4>
-                        <div class="row text-center">
-                            <div class="col-md-4 mb-3">
-                                <div class="p-3 rounded-3 shadow-sm" style="background:rgba(16,185,129,0.07);">
-                                    <div class="confidence-badge confidence-high mb-2">High</div>
-                                    <div class="h3 fw-bold" style="color: var(--danger-color); font-size:1.7rem;">{{ results.confidence_summary.High }}</div>
-                                    <small class="text-muted">Resources</small>
-                                </div>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <div class="p-3 rounded-3 shadow-sm" style="background:rgba(245,158,11,0.09);">
-                                    <div class="confidence-badge confidence-medium mb-2">Medium</div>
-                                    <div class="h3 fw-bold" style="color: var(--warning-color); font-size:1.7rem;">{{ results.confidence_summary.Medium }}</div>
-                                    <small class="text-muted">Resources</small>
-                                </div>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <div class="p-3 rounded-3 shadow-sm" style="background:rgba(59,130,246,0.09);">
-                                    <div class="confidence-badge confidence-low mb-2">Low</div>
-                                    <div class="h3 fw-bold" style="color: var(--info-color); font-size:1.7rem;">{{ results.confidence_summary.Low }}</div>
-                                    <small class="text-muted">Resources</small>
-                                </div>
-                            </div>
-                        </div>
-                        <p class="text-muted small mt-3">
-                            <i class="bi bi-info-circle me-1" style="color: var(--info-color);"></i>
-                            High = idle (zero usage), or overpriced and flagged by the ML model<br>
-                            Medium = priced far above similar resources · Low = ML flag only
-                        </p>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="plot-container h-100">
-                        <h4 class="fw-bold mb-3">
-                            <i class="bi bi-distribute-vertical text-info me-2"></i>Top Waste Categories
-                        </h4>
-                        <div class="table-responsive">
-                            {{ results.waste_distribution | safe }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Savings Highlight -->
-            <div class="savings-highlight">
-                <h4 class="fw-bold mb-3">
-                    <i class="bi bi-trophy me-2"></i> Total Savings Opportunity
-                </h4>
-                <div class="row text-center gx-4">
-                    <div class="col-md-4 mb-3 mb-md-0 d-flex flex-column align-items-center justify-content-center">
-                        <div class="fw-bold">{{ results.savings }}</div>
-                        <small>7-day immediate savings</small>
-                    </div>
-                    <div class="col-md-4 mb-3 mb-md-0 d-flex flex-column align-items-center justify-content-center">
-                        {% set monthly_savings = results.savings|replace('$','')|replace(',','')|float * 30/7 %}
-                        <div class="fw-bold">${{ "%.0f"|format(monthly_savings) }}</div>
-                        <small>Monthly potential</small>
-                    </div>
-                    <div class="col-md-4 d-flex flex-column align-items-center justify-content-center">
-                        <div class="fw-bold">{{ results.savings_pct_vs_bau }}</div>
-                        <small>Spend reduction</small>
-                    </div>
-                </div>
-            </div>
-            <!-- Zombie Resources -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="plot-container">
-                        <h4 class="fw-bold mb-3">
-                            <i class="bi bi-search text-danger me-2"></i>Detected Zombie Resources
-                        </h4>
-                        <div class="table-responsive">
-                            {{ results.zombies_preview | safe }}
-                        </div>
-                        {% if results.zombie_count|replace(',','')|int > 10 %}
-                        <div class="text-center mt-3">
-                            <small class="text-muted">Showing top 10 of {{ results.zombie_count }} zombie resources</small>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            <!-- Glossary -->
-            <div class="row">
-                <div class="col-12">
-                    <div class="plot-container">
-                        <h4 class="fw-bold mb-3">
-                            <i class="bi bi-book text-primary me-2"></i>FinOps Glossary
-                        </h4>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <dl class="mb-0">
-                                    <dt class="glossary-term">Zombie Waste</dt>
-                                    <dd>Estimated cost of resources that are idle or priced far above similar resources (cost above the peer median, not the whole bill).</dd>
-                                    <dt class="glossary-term">BAU Forecast</dt>
-                                    <dd>Business-as-usual projection assuming current patterns continue.</dd>
-                                    <dt class="glossary-term">Confidence Level</dt>
-                                    <dd>How much evidence supports a finding: High, Medium or Low, based on which signals fired.</dd>
-                                </dl>
-                            </div>
-                            <div class="col-md-6">
-                                <dl class="mb-0">
-                                    <dt class="glossary-term">Optimized Forecast</dt>
-                                    <dd>Projected costs after implementing waste removal recommendations.</dd>
-                                    <dt class="glossary-term">CostPerUnit</dt>
-                                    <dd>Cost divided by consumption quantity - key efficiency metric.</dd>
-                                    <dt class="glossary-term">95% CI</dt>
-                                    <dd>95% confidence interval around forecast values.</dd>
-                                </dl>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Footer -->
-            <footer class="text-center py-4 mt-4 border-top">
-                <p class="mb-0" style="color: var(--muted);">
-                    <i class="bi bi-lightning-charge-fill text-warning me-1" style="color: var(--warning-color);"></i>
-                    Powered by Advanced AI/ML | Analysis completed {{ results.analysis_time }}
-                </p>
-            </footer>
-        </div>
-    </div>
+        <section class="summary stock" aria-labelledby="insight-title">
+            <h2 id="insight-title">{{ results.insight_headline }}</h2>
+            <ul>
+                {% for detail in results.insight_detail %}
+                <li>{{ detail }}</li>
+                {% endfor %}
+            </ul>
+        </section>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Show loading on form submit
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.querySelector('form');
-            if (form) {
-                form.addEventListener('submit', function() {
-                    document.getElementById('loadingOverlay').style.display = 'flex';
-                });
-            }
-            // Animate metric cards one-by-one for entrance effect
-            const cards = document.querySelectorAll('.metric-card');
-            cards.forEach((card, index) => {
-                setTimeout(() => {
-                    card.style.opacity = '1';
-                    card.style.transform = 'translateY(0)';
-                }, index * 120 + 120);
-            });
-            // Add tooltips
-            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl);
-            });
-        });
-        // Auto-hide alerts after 5 seconds
-        setTimeout(() => {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(alert => {
-                const bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
-            });
-        }, 5000);
-    </script>
+        <section class="block" aria-labelledby="metrics-title">
+            <h2 id="metrics-title" class="visually-hidden">Key metrics</h2>
+            <dl class="stats">
+                <div><dt>Total spend</dt><dd>{{ results.total_spend }}<span class="stats__sub">Across {{ results.period_days }} days</span></dd></div>
+                <div><dt>Zombie waste</dt><dd>{{ results.zombie_waste }}<span class="stats__sub">{{ results.zombie_count }} resources</span></dd></div>
+                <div><dt>Waste share</dt><dd>{{ results.zombie_pct_of_total }}<span class="stats__sub">Of historical spend</span></dd></div>
+                <div><dt>Daily waste</dt><dd>{{ results.avg_daily_zombie }}<span class="stats__sub">Average per day</span></dd></div>
+            </dl>
+            <dl class="stats">
+                <div><dt>BAU forecast</dt><dd>{{ results.forecast_bau }}<span class="stats__sub">7-day projection</span></dd></div>
+                <div><dt>Optimized forecast</dt><dd>{{ results.forecast_opt }}<span class="stats__sub">After optimization</span></dd></div>
+                <div><dt>Potential savings</dt><dd>{{ results.savings }}<span class="stats__sub">Next 7 days</span></dd></div>
+                <div><dt>Savings %</dt><dd>{{ results.savings_pct_vs_bau }}<span class="stats__sub">Reduction vs BAU</span></dd></div>
+            </dl>
+        </section>
+
+        <section class="block" aria-labelledby="findings-title">
+            <div class="block__head">
+                <h2 id="findings-title">Detected zombie resources</h2>
+                {% if results.zombie_count|replace(',','')|int > 10 %}
+                <p class="block__note">Showing top 10 of {{ results.zombie_count }} zombie resources</p>
+                {% endif %}
+            </div>
+            <div class="sheet stock">
+                {{ results.zombies_preview | safe }}
+            </div>
+        </section>
+
+        {% if results.recommendations %}
+        <section class="block" aria-labelledby="recs-title">
+            <div class="block__head">
+                <h2 id="recs-title">Actionable recommendations</h2>
+            </div>
+            <ul class="recs">
+                {% for rec in results.recommendations %}
+                <li class="priority-{{ rec.priority }}">
+                    <h3>{{ rec.title }} <span class="tag tag--{{ rec.priority }}">{{ rec.priority|capitalize }} priority</span></h3>
+                    <div>
+                        <p class="desc">{{ rec.description }}</p>
+                        <p class="action"><strong>Action:</strong> {{ rec.action }}</p>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
+        {% endif %}
+
+        <section class="block" aria-labelledby="forecast-title">
+            <div class="block__head">
+                <h2 id="forecast-title">Cost forecast &amp; optimization</h2>
+            </div>
+            <figure class="chart stock">
+                <img src="data:image/png;base64,{{ results.plots.main_plot }}" alt="Daily spend with the 7-day business-as-usual and optimized forecasts, beside a bar chart of findings by confidence level.">
+            </figure>
+        </section>
+
+        <section class="block split" aria-label="Waste by service and confidence">
+            <div>
+                <div class="block__head">
+                    <h2>Top waste categories</h2>
+                </div>
+                {% if results.plots.zombie_analysis %}
+                <figure class="chart stock">
+                    <img src="data:image/png;base64,{{ results.plots.zombie_analysis }}" alt="Estimated waste by service, largest first.">
+                    <figcaption>Waste distribution by service</figcaption>
+                </figure>
+                {% endif %}
+                {{ results.waste_distribution | safe }}
+            </div>
+            <div>
+                <div class="block__head">
+                    <h2>Detection confidence</h2>
+                </div>
+                <dl class="levels">
+                    <div><dt><span class="tag tag--high">High</span></dt><dd>{{ results.confidence_summary.High }}</dd></div>
+                    <div><dt><span class="tag tag--medium">Medium</span></dt><dd>{{ results.confidence_summary.Medium }}</dd></div>
+                    <div><dt><span class="tag tag--low">Low</span></dt><dd>{{ results.confidence_summary.Low }}</dd></div>
+                </dl>
+                <p class="levels-key">Resources at each level.<br>
+                    High = idle (zero usage), or overpriced and flagged by the ML model.<br>
+                    Medium = priced far above similar resources.<br>
+                    Low = ML flag only.</p>
+            </div>
+        </section>
+
+        <section class="board" aria-labelledby="savings-title">
+            <h2 id="savings-title">Total savings opportunity</h2>
+            {% set monthly_savings = results.savings|replace('$','')|replace(',','')|float * 30/7 %}
+            <dl class="stats">
+                <div><dt>7-day immediate savings</dt><dd>{{ results.savings }}</dd></div>
+                <div><dt>Monthly potential</dt><dd>${{ "%.0f"|format(monthly_savings) }}</dd></div>
+                <div><dt>Spend reduction</dt><dd>{{ results.savings_pct_vs_bau }}</dd></div>
+            </dl>
+        </section>
+
+        <section class="block" aria-labelledby="glossary-title">
+            <div class="block__head">
+                <h2 id="glossary-title">FinOps glossary</h2>
+            </div>
+            <dl class="glossary">
+                <div><dt>Zombie waste</dt><dd>Estimated cost of resources that are idle or priced far above similar resources (cost above the peer median, not the whole bill).</dd></div>
+                <div><dt>Optimized forecast</dt><dd>Projected costs after implementing waste removal recommendations.</dd></div>
+                <div><dt>BAU forecast</dt><dd>Business-as-usual projection assuming current patterns continue.</dd></div>
+                <div><dt>CostPerUnit</dt><dd>Cost divided by consumption quantity, the key efficiency metric.</dd></div>
+                <div><dt>Confidence level</dt><dd>How much evidence supports a finding: High, Medium or Low, based on which signals fired.</dd></div>
+                <div><dt>95% CI</dt><dd>95% confidence interval around forecast values.</dd></div>
+            </dl>
+        </section>
+
+        <footer class="colophon">
+            <p>Powered by Advanced AI/ML.</p>
+            <p>Analysis completed {{ results.analysis_time }}</p>
+        </footer>
+    </main>
 </body>
 </html>

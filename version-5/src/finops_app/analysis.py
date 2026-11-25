@@ -18,6 +18,8 @@ from finops_core.pipeline import analyze
 from finops_core.recommendations import generate_recommendations
 
 PREVIEW_ROWS = 10
+_NUM = ' class="num"'
+_MONEY_COLUMNS = frozenset({"Est. waste", "Per month"})
 TOP_WASTE_SERVICES = 5
 FORECAST_METHOD_LABELS = {
     "moving_average_7": "7-day moving average",
@@ -104,41 +106,40 @@ def build_dashboard(result: AnalysisResult) -> dict[str, Any]:
 def _findings_html(findings: tuple[Finding, ...]) -> str:
     if not findings:
         return (
-            '<div class="alert alert-success text-center">'
-            '<i class="bi bi-check-circle me-2"></i>'
+            '<p class="empty">'
             "No wasteful resources detected. Your cloud spend appears to be efficient."
-            "</div>"
+            "</p>"
         )
     header = "".join(
-        f"<th>{h}</th>"
+        f'<th scope="col"{_NUM if h in _MONEY_COLUMNS else ""}>{h}</th>'
         for h in ("Resource", "Service", "Region", "Est. waste", "Per month", "Confidence", "Why")
     )
     rows = "".join(_finding_row(f) for f in findings[:PREVIEW_ROWS])
     return (
-        '<table class="table table-striped table-hover align-middle">'
+        '<table class="ledger ledger--findings">'
         f"<thead><tr>{header}</tr></thead><tbody>{rows}</tbody></table>"
     )
 
 
 def _finding_row(f: Finding) -> str:
-    cells = (
-        f.label,
-        f.service,
-        f.region or "—",
-        f"${f.estimated_waste:,.2f}",
-        f"${f.estimated_monthly_waste:,.2f}",
-        f.confidence,
-        "; ".join(f.reasons),
+    esc = html.escape
+    return (
+        f'<tr><th scope="row">{esc(f.label)}</th>'
+        f"<td>{esc(f.service)}</td>"
+        f"<td>{esc(f.region or 'Not given')}</td>"
+        f"<td{_NUM}>${f.estimated_waste:,.2f}</td>"
+        f"<td{_NUM}>${f.estimated_monthly_waste:,.2f}</td>"
+        f'<td><span class="tag tag--{esc(f.confidence.lower())}">{esc(f.confidence)}</span></td>'
+        f'<td class="why">{esc("; ".join(f.reasons))}</td></tr>'
     )
-    return "<tr>" + "".join(f"<td>{html.escape(str(c))}</td>" for c in cells) + "</tr>"
 
 
 def _waste_distribution_html(result: AnalysisResult) -> str:
     by_service = list(result.waste_by_service().items())[:TOP_WASTE_SERVICES]
     if not by_service:
-        return "<p class='text-muted'>No category data available</p>"
+        return '<p class="empty">No category data available</p>'
     rows = "".join(
-        f"<tr><th>{html.escape(service)}</th><td>${waste:,.2f}</td></tr>"
+        f'<tr><th scope="row">{html.escape(service)}</th><td{_NUM}>${waste:,.2f}</td></tr>'
         for service, waste in by_service
     )
-    return f'<table class="table table-sm table-hover"><tbody>{rows}</tbody></table>'
+    return f'<table class="ledger ledger--compact"><tbody>{rows}</tbody></table>'

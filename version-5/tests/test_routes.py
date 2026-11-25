@@ -24,7 +24,7 @@ def _upload(client: FlaskClient, content: bytes, filename: str = "billing.csv") 
 def test_landing_page(client: FlaskClient) -> None:
     resp = client.get("/")
     assert resp.status_code == 200
-    assert "LAUNCH SYSTEM" in resp.get_data(as_text=True)
+    assert "Launch system" in resp.get_data(as_text=True)
 
 
 def test_upload_page(client: FlaskClient) -> None:
