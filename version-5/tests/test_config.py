@@ -84,3 +84,37 @@ def test_config_is_immutable() -> None:
     cfg = Config()
     with pytest.raises(AttributeError):
         cfg.port = 1  # type: ignore[misc]
+
+
+def test_phase2_defaults() -> None:
+    cfg = Config.from_env({})
+    assert cfg.database_url == "sqlite:///finops.db"
+    assert cfg.redis_url is None
+    assert cfg.max_rows == 2_000_000
+    assert cfg.retention_days == 90
+    assert cfg.auto_migrate is True
+
+
+def test_phase2_variables_are_read() -> None:
+    cfg = Config.from_env(
+        {
+            "FINOPS_DATABASE_URL": "postgresql+psycopg://u:p@db/finops",
+            "FINOPS_REDIS_URL": "redis://redis:6379/0",
+            "FINOPS_MAX_ROWS": "500",
+            "FINOPS_RETENTION_DAYS": "7",
+            "FINOPS_AUTO_MIGRATE": "0",
+        }
+    )
+    assert cfg.database_url.startswith("postgresql+psycopg://")
+    assert cfg.redis_url == "redis://redis:6379/0"
+    assert (cfg.max_rows, cfg.retention_days, cfg.auto_migrate) == (500, 7, False)
+
+
+def test_production_does_not_auto_migrate() -> None:
+    cfg = Config.from_env({"FINOPS_ENV": "production", "FINOPS_SECRET_KEY": "x" * 32})
+    assert cfg.auto_migrate is False
+
+
+def test_database_url_not_in_repr() -> None:
+    cfg = Config(database_url="postgresql://user:hunter2@db/x")
+    assert "hunter2" not in repr(cfg)

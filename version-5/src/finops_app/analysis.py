@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import html
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from finops_app.plots import generate_plots
@@ -64,7 +64,8 @@ def run_analysis(filepath: str) -> dict[str, Any]:
     return build_dashboard(analyze(filepath))
 
 
-def build_dashboard(result: AnalysisResult) -> dict[str, Any]:
+def build_dashboard(result: AnalysisResult, completed_at: datetime | None = None) -> dict[str, Any]:
+    """The ``results`` dict for dashboard.html; ``completed_at`` defaults to now."""
     s = compute_savings(result)
     recommendations = generate_recommendations(
         result.findings, result.waste_percentage, s.potential_savings
@@ -99,7 +100,7 @@ def build_dashboard(result: AnalysisResult) -> dict[str, Any]:
         "confidence_summary": result.confidence_summary(),
         "zombies_preview": _findings_html(result.findings),
         "analysis_version": result.analysis_version,
-        "analysis_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "analysis_time": (completed_at or datetime.now(UTC)).strftime("%Y-%m-%d %H:%M:%S UTC"),
     }
 
 

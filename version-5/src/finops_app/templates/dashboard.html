@@ -1,24 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% include "_app_head.html" %}
     <title>FinOps Dashboard</title>
     <meta name="description" content="Wasteful cloud resources found in your billing file, with the reason for each and a 7-day spend forecast.">
-    <link rel="preconnect" href="https://api.fontshare.com">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 </head>
 <body>
-    <header class="topbar">
-        <div class="container topbar__inner">
-            <a class="wordmark" href="/" aria-label="FinOps.AI home">FinOps.AI</a>
-            <a href="/upload" class="btn btn--ink">Analyze new dataset</a>
-        </div>
-    </header>
+{% set active = 'dashboard' %}
+{% include "_app_topbar.html" %}
 
     <main class="container">
         <section class="page-head" aria-labelledby="page-title">

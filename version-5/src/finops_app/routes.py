@@ -1,32 +1,40 @@
-"""HTTP routes: landing page, upload + dashboard, sample CSV download."""
+"""HTTP routes: landing, upload, analysis status and results, history, sample CSV."""
 
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+import tempfile
 from pathlib import Path
 
 from flask import (
     Blueprint,
     Response,
+    abort,
     current_app,
     flash,
+    jsonify,
     redirect,
     render_template,
     request,
+    url_for,
 )
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
-from finops_app import analysis
-from finops_core.errors import DataValidationError
+from finops_app import analysis as dashboard
+from finops_app import repository as repo
+from finops_app.config import Config
+from finops_app.db import get_session
+from finops_app.jobs import JobQueue
+from finops_app.models import Analysis
+from finops_app.storage import Storage, make_key
+from finops_app.uploads import UploadRejected, check_contents, check_filename
 
 logger = logging.getLogger(__name__)
 
 bp = Blueprint("web", __name__)
 
-ALLOWED_EXTENSIONS = (".csv",)
-GENERIC_FAILURE = "Analysis failed due to an internal error. Please check the file and try again."
+INCOMING_DIR = ".incoming"
 SAMPLE_CSV = """UsageDate,ServiceCategory,EffectiveCost,ConsumedQuantity
 2024-01-01,Compute,125.50,100
 2024-01-01,Storage,45.25,50
@@ -36,6 +44,29 @@ SAMPLE_CSV = """UsageDate,ServiceCategory,EffectiveCost,ConsumedQuantity
 2024-01-03,Storage,48.10,55
 2024-01-04,Database,85.30,20
 2024-01-04,Network,12.40,15"""
+
+
+def _config() -> Config:
+    cfg: Config = current_app.extensions["finops_config"]
+    return cfg
+
+
+def _storage() -> Storage:
+    storage: Storage = current_app.extensions["finops_storage"]
+    return storage
+
+
+def _queue() -> JobQueue:
+    queue: JobQueue = current_app.extensions["finops_queue"]
+    return queue
+
+
+def _org_id() -> str:
+    """The organisation this request acts for (the default org until Phase 3)."""
+    session = get_session()
+    org_id = repo.default_org_id(session)
+    session.commit()
+    return org_id
 
 
 @bp.get("/")
@@ -49,24 +80,78 @@ def index() -> str | Response:
         return render_template("index.html")
 
     file = request.files.get("file")
-    error = _validate_upload(file)
-    if error or file is None:
-        flash(error or "No file selected", "danger")
+    if file is None:
+        flash("No file selected", "danger")
         return redirect(request.url)  # type: ignore[return-value]
-
-    filepath = _save_upload(file)
     try:
-        results = analysis.run_analysis(str(filepath))
-    except DataValidationError as exc:
-        logger.info("Upload rejected: %s", exc, extra={"upload": filepath.name})
+        analysis_id = _accept_upload(file)
+    except UploadRejected as exc:
         flash(str(exc), "warning")
         return redirect(request.url)  # type: ignore[return-value]
-    except Exception:
-        logger.exception("Analysis failed", extra={"upload": filepath.name})
-        flash(GENERIC_FAILURE, "danger")
-        return redirect(request.url)  # type: ignore[return-value]
+    return redirect(url_for("web.show_analysis", analysis_id=analysis_id))  # type: ignore[return-value]
 
-    return render_template("dashboard.html", results=results)
+
+def _accept_upload(file: FileStorage) -> str:
+    """Check, store and queue one upload; returns the new analysis id."""
+    filename = check_filename(file.filename)
+    incoming = Path(_config().upload_dir) / INCOMING_DIR
+    incoming.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(dir=incoming, suffix=".csv", delete=False) as tmp:
+        tmp_path = Path(tmp.name)
+    try:
+        file.save(tmp_path)
+        check = check_contents(tmp_path, _config().max_rows)
+        session = get_session()
+        org_id = _org_id()
+        key = make_key(org_id)
+        _storage().put_file(key, tmp_path)
+        analysis = repo.create_upload(
+            session,
+            org_id,
+            original_filename=secure_filename(filename) or "upload.csv",
+            storage_key=key,
+            size_bytes=check.size_bytes,
+            row_count=check.row_count,
+        )
+        session.commit()
+    finally:
+        tmp_path.unlink(missing_ok=True)
+    _queue().enqueue(org_id, analysis.id)
+    logger.info("Upload queued", extra={"analysis": analysis.id, "rows": check.row_count})
+    return analysis.id
+
+
+def _analysis_or_404(analysis_id: str) -> Analysis:
+    found = repo.get_analysis(get_session(), _org_id(), analysis_id)
+    if found is None:
+        abort(404)
+    return found
+
+
+@bp.get("/analyses/<analysis_id>")
+def show_analysis(analysis_id: str) -> str:
+    found = _analysis_or_404(analysis_id)
+    if found.status == "succeeded":
+        results = dashboard.build_dashboard(repo.load_result(found), found.finished_at)
+        return render_template("dashboard.html", results=results, analysis=found)
+    return render_template("analysis_status.html", analysis=found)
+
+
+@bp.get("/analyses/<analysis_id>/status")
+def analysis_status(analysis_id: str) -> Response:
+    found = _analysis_or_404(analysis_id)
+    return jsonify(
+        id=found.id,
+        status=found.status,
+        error=found.error_message if found.status == "failed" else None,
+        url=url_for("web.show_analysis", analysis_id=found.id),
+    )
+
+
+@bp.get("/analyses")
+def history() -> str:
+    analyses = repo.list_analyses(get_session(), _org_id())
+    return render_template("history.html", analyses=analyses)
 
 
 @bp.get("/sample")
@@ -76,22 +161,3 @@ def sample_data() -> Response:
         mimetype="text/csv",
         headers={"Content-Disposition": "attachment; filename=sample_finops_data.csv"},
     )
-
-
-def _validate_upload(file: FileStorage | None) -> str | None:
-    """Return a user-facing error message, or ``None`` if the upload looks valid."""
-    if file is None:
-        return "No file selected"
-    if not file.filename:
-        return "Please select a file"
-    if not file.filename.lower().endswith(ALLOWED_EXTENSIONS):
-        return "Only CSV files are supported"
-    return None
-
-
-def _save_upload(file: FileStorage) -> Path:
-    upload_dir = Path(current_app.config["UPLOAD_FOLDER"])
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filepath = upload_dir / f"{timestamp}_{secure_filename(file.filename or 'upload.csv')}"
-    file.save(filepath)
-    return filepath

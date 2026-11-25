@@ -1,0 +1,9 @@
+    <header class="topbar">
+        <div class="container topbar__inner">
+            <a class="wordmark" href="/" aria-label="FinOps.AI home">FinOps.AI</a>
+            <nav class="topbar__nav" aria-label="App">
+                <a href="{{ url_for('web.history') }}"{% if active == 'history' %} aria-current="page"{% endif %}>History</a>
+                {% if active != 'upload' %}<a href="{{ url_for('web.index') }}" class="btn btn--ink">Analyze new dataset</a>{% endif %}
+            </nav>
+        </div>
+    </header>

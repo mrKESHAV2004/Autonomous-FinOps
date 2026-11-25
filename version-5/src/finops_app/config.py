@@ -12,6 +12,12 @@
 | ``FINOPS_DEBUG``         | ``0``                  | ``1`` enables Flask debug (refused in prod)   |
 | ``FINOPS_LOG_LEVEL``     | ``INFO``               |                                               |
 | ``FINOPS_LOG_JSON``      | ``1`` in prod          | structured JSON logs                          |
+| ``FINOPS_DATABASE_URL``  | ``sqlite:///finops.db``| SQLAlchemy URL; PostgreSQL in production      |
+| ``FINOPS_REDIS_URL``     | unset                  | set to run jobs on an RQ worker; unset runs   |
+|                          |                        | them on a background thread in the web app    |
+| ``FINOPS_MAX_ROWS``      | ``2000000``            | uploads with more data rows are rejected      |
+| ``FINOPS_RETENTION_DAYS``| ``90``                 | raw uploads older than this are deleted       |
+| ``FINOPS_AUTO_MIGRATE``  | ``1`` outside prod     | apply database migrations when the app starts |
 """
 
 from __future__ import annotations
@@ -25,6 +31,9 @@ from pathlib import Path
 VALID_ENVS = ("development", "production", "testing")
 DEFAULT_MAX_UPLOAD_MB = 50
 DEFAULT_PORT = 5000
+DEFAULT_DATABASE_URL = "sqlite:///finops.db"
+DEFAULT_MAX_ROWS = 2_000_000
+DEFAULT_RETENTION_DAYS = 90
 
 
 class ConfigError(RuntimeError):
@@ -43,6 +52,11 @@ class Config:
     debug: bool = False
     log_level: str = "INFO"
     log_json: bool = False
+    database_url: str = field(default=DEFAULT_DATABASE_URL, repr=False)
+    redis_url: str | None = field(default=None, repr=False)
+    max_rows: int = DEFAULT_MAX_ROWS
+    retention_days: int = DEFAULT_RETENTION_DAYS
+    auto_migrate: bool = True
 
     @property
     def testing(self) -> bool:
@@ -80,6 +94,11 @@ class Config:
             debug=debug,
             log_level=env_vars.get("FINOPS_LOG_LEVEL", "INFO").upper(),
             log_json=_bool(env_vars.get("FINOPS_LOG_JSON"), default=is_prod),
+            database_url=env_vars.get("FINOPS_DATABASE_URL", "").strip() or DEFAULT_DATABASE_URL,
+            redis_url=env_vars.get("FINOPS_REDIS_URL", "").strip() or None,
+            max_rows=_positive_int(env_vars, "FINOPS_MAX_ROWS", DEFAULT_MAX_ROWS),
+            retention_days=_positive_int(env_vars, "FINOPS_RETENTION_DAYS", DEFAULT_RETENTION_DAYS),
+            auto_migrate=_bool(env_vars.get("FINOPS_AUTO_MIGRATE"), default=not is_prod),
         )
 
 

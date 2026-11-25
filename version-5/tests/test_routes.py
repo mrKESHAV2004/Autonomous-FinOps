@@ -7,7 +7,8 @@ from pathlib import Path
 import pytest
 from flask.testing import FlaskClient
 
-from finops_app import analysis
+from finops_app import create_app, tasks
+from finops_app.config import Config
 
 
 def _upload(client: FlaskClient, content: bytes, filename: str = "billing.csv") -> str:
@@ -67,9 +68,8 @@ def test_missing_columns_shows_validation_message(client: FlaskClient) -> None:
     assert "Missing required column(s)" in body
 
 
-def test_too_few_rows_shows_validation_message(client: FlaskClient) -> None:
-    csv = b"UsageDate,EffectiveCost,ConsumedQuantity\n2024-01-01,5,1\n"
-    assert "Insufficient data" in _upload(client, csv)
+def test_header_only_file_is_rejected_before_queueing(client: FlaskClient) -> None:
+    assert "no data rows" in _upload(client, b"UsageDate,EffectiveCost,ConsumedQuantity\n")
 
 
 def test_too_large_upload_is_rejected(client: FlaskClient) -> None:
@@ -78,36 +78,109 @@ def test_too_large_upload_is_rejected(client: FlaskClient) -> None:
 
 
 def test_internal_errors_do_not_leak_details(
-    client: FlaskClient, monkeypatch: pytest.MonkeyPatch
+    client: FlaskClient, monkeypatch: pytest.MonkeyPatch, make_billing_csv: Callable[..., Path]
 ) -> None:
-    def boom(_path: str) -> dict[str, object]:
+    def boom(_path: str) -> object:
         raise RuntimeError("secret /etc/internal/path")
 
-    monkeypatch.setattr(analysis, "run_analysis", boom)
-    body = _upload(client, b"UsageDate,EffectiveCost,ConsumedQuantity\n")
+    monkeypatch.setattr(tasks, "analyze", boom)
+    body = _upload(client, make_billing_csv(days=5).read_bytes())
 
     assert "internal error" in body
     assert "/etc/internal/path" not in body
 
 
-def test_successful_upload_renders_dashboard_and_saves_file(
-    client: FlaskClient, make_billing_csv: Callable[..., Path], config: object
+def test_successful_upload_renders_dashboard_and_stores_file(
+    client: FlaskClient, make_billing_csv: Callable[..., Path], config: Config
 ) -> None:
     body = _upload(client, make_billing_csv(days=10).read_bytes())
 
     assert "Cloud Waste Analysis Complete" in body
     assert "data:image/png;base64," in body
-    saved = list(Path(config.upload_dir).glob("*_billing.csv"))  # type: ignore[attr-defined]
-    assert len(saved) == 1
+    stored = [p for p in Path(config.upload_dir).rglob("*.csv") if ".incoming" not in p.parts]
+    assert len(stored) == 1
+    assert not list((Path(config.upload_dir) / ".incoming").iterdir())
 
 
-def test_filename_is_sanitised(
-    client: FlaskClient, make_billing_csv: Callable[..., Path], config: object
+def test_filename_is_sanitised_and_never_used_as_a_path(
+    client: FlaskClient, make_billing_csv: Callable[..., Path], config: Config
 ) -> None:
     _upload(client, make_billing_csv(days=5).read_bytes(), filename="../../evil.csv")
 
-    upload_dir = Path(config.upload_dir)  # type: ignore[attr-defined]
-    names = [p.name for p in upload_dir.iterdir()]
-    assert len(names) == 1
-    assert names[0].endswith("_evil.csv")
+    upload_dir = Path(config.upload_dir)
     assert not (upload_dir.parent.parent / "evil.csv").exists()
+    assert not list(upload_dir.rglob("evil.csv"))
+    assert "evil.csv" in client.get("/analyses").get_data(as_text=True)
+
+
+def test_upload_redirects_to_the_analysis_page(
+    client: FlaskClient, make_billing_csv: Callable[..., Path]
+) -> None:
+    resp = client.post(
+        "/upload",
+        data={"file": (io.BytesIO(make_billing_csv(days=5).read_bytes()), "bill.csv")},
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 302
+    assert resp.headers["Location"].startswith("/analyses/")
+
+
+def test_status_endpoint_reports_the_result(
+    client: FlaskClient, make_billing_csv: Callable[..., Path]
+) -> None:
+    resp = client.post(
+        "/upload",
+        data={"file": (io.BytesIO(make_billing_csv(days=5).read_bytes()), "bill.csv")},
+        content_type="multipart/form-data",
+    )
+    url = resp.headers["Location"]
+    status = client.get(url + "/status").get_json()
+    assert status["status"] == "succeeded"
+    assert status["error"] is None
+    assert status["url"] == url
+
+
+def test_failed_analysis_shows_its_reason(client: FlaskClient) -> None:
+    body = _upload(client, b"UsageDate,EffectiveCost,ConsumedQuantity\n2024-01-01,5,1\n")
+    assert "didn’t finish" in body
+    assert "Insufficient data" in body
+
+
+def test_results_survive_an_app_restart(
+    config: Config, make_billing_csv: Callable[..., Path]
+) -> None:
+    first = create_app(config).test_client()
+    resp = first.post(
+        "/upload",
+        data={"file": (io.BytesIO(make_billing_csv(days=5).read_bytes()), "bill.csv")},
+        content_type="multipart/form-data",
+    )
+    url = resp.headers["Location"]
+
+    restarted = create_app(config).test_client()
+    assert "Cloud Waste Analysis Complete" in restarted.get(url).get_data(as_text=True)
+
+
+def test_history_lists_past_analyses(
+    client: FlaskClient, make_billing_csv: Callable[..., Path]
+) -> None:
+    assert "No analyses yet" in client.get("/analyses").get_data(as_text=True)
+    _upload(client, make_billing_csv(days=5).read_bytes(), filename="march.csv")
+    _upload(
+        client, b"UsageDate,EffectiveCost,ConsumedQuantity\n2024-01-01,5,1\n", filename="tiny.csv"
+    )
+
+    body = client.get("/analyses").get_data(as_text=True)
+    assert body.index("tiny.csv") < body.index("march.csv")  # newest first
+    assert "Succeeded" in body and "Failed" in body
+
+
+def test_unknown_analysis_is_404(client: FlaskClient) -> None:
+    assert client.get("/analyses/" + "0" * 32).status_code == 404
+    assert client.get("/analyses/" + "0" * 32 + "/status").status_code == 404
+
+
+def test_rejected_upload_is_not_stored(client: FlaskClient, config: Config) -> None:
+    assert "binary data" in _upload(client, b"\x00\x01\x02,\x03\n")
+    assert not [p for p in Path(config.upload_dir).rglob("*.csv")]
+    assert "No analyses yet" in client.get("/analyses").get_data(as_text=True)

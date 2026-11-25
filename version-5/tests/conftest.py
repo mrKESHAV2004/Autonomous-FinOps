@@ -24,6 +24,8 @@ def config(tmp_path: Path) -> Config:
         upload_dir=tmp_path / "uploads",
         artifact_dir=tmp_path / "artifacts",
         max_upload_mb=1,
+        database_url=f"sqlite:///{tmp_path / 'test.db'}",
+        max_rows=10_000,
     )
 
 

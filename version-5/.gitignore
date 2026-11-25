@@ -19,3 +19,10 @@ htmlcov/
 
 # Runtime data
 uploads/
+*.db
+*.db-shm
+*.db-wal
+finops_artifacts/
+
+# Hallmark design-run records and screenshots
+.hallmark/

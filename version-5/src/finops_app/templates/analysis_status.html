@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% include "_app_head.html" %}
+    <title>Analysis {{ analysis.status }}: {{ analysis.dataset.original_filename }}</title>
+    <meta name="description" content="Progress of the analysis of an uploaded billing file.">
+    {% if analysis.status in ("queued", "running") %}<noscript><meta http-equiv="refresh" content="5"></noscript>{% endif %}
+</head>
+<body>
+{% set active = 'analysis' %}
+{% include "_app_topbar.html" %}
+    <main class="container">
+        <section class="page-head" aria-labelledby="page-title">
+            <div>
+                <h1 id="page-title">{{ analysis.dataset.original_filename }}</h1>
+                <p class="page-head__meta">{{ analysis.dataset.row_count | default(0) }} rows, uploaded {{ analysis.created_at.strftime("%Y-%m-%d %H:%M") }} UTC</p>
+            </div>
+        </section>
+
+        <section class="job stock" aria-live="polite" data-status-url="{{ url_for('web.analysis_status', analysis_id=analysis.id) }}" data-status="{{ analysis.status }}">
+            {% if analysis.status == "failed" %}
+            <h2>The analysis didn’t finish</h2>
+            <p class="notice" role="alert">{{ analysis.error_message }}</p>
+            <p class="job__next"><a href="{{ url_for('web.index') }}" class="btn btn--ink">Upload another file</a></p>
+            {% else %}
+            <h2 id="job-state">{% if analysis.status == "running" %}Analyzing your cloud data…{% else %}Waiting for a worker…{% endif %}</h2>
+            <p class="job__hint">This page updates by itself. Large files can take a minute; you can leave and find the result under History.</p>
+            {% endif %}
+        </section>
+    </main>
+    {% if analysis.status in ("queued", "running") %}
+    <script>
+        (function () {
+            var box = document.querySelector('[data-status-url]');
+            var label = document.getElementById('job-state');
+            var delay = 1000;
+            function poll() {
+                fetch(box.dataset.statusUrl, { headers: { 'Accept': 'application/json' } })
+                    .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+                    .then(function (data) {
+                        if (data.status === 'succeeded' || data.status === 'failed') { window.location.replace(data.url); return; }
+                        if (data.status === 'running') { label.textContent = 'Analyzing your cloud data…'; }
+                        delay = Math.min(delay * 1.5, 5000);
+                        setTimeout(poll, delay);
+                    })
+                    .catch(function () { setTimeout(poll, 5000); });
+            }
+            setTimeout(poll, delay);
+        })();
+    </script>
+    {% endif %}
+</body>
+</html>
