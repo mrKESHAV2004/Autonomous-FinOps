@@ -1,0 +1,64 @@
+# Local stack: web + worker + PostgreSQL + Redis.
+#   docker compose up --build        then open http://localhost:5000
+# Credentials below are for local development only; override them via .env.
+name: finops
+
+x-app: &app
+  build: .
+  environment: &app-env
+    FINOPS_ENV: development
+    FINOPS_SECRET_KEY: ${FINOPS_SECRET_KEY:-local-dev-secret-change-me}
+    FINOPS_DATABASE_URL: postgresql+psycopg://finops:${POSTGRES_PASSWORD:-finops-dev}@postgres:5432/finops
+    FINOPS_REDIS_URL: redis://redis:6379/0
+    FINOPS_AUTO_MIGRATE: "0"
+  volumes:
+    - uploads:/data/uploads
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: finops
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-finops-dev}
+      POSTGRES_DB: finops
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finops -d finops"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  migrate:
+    <<: *app
+    command: ["finops-db", "upgrade"]
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  web:
+    <<: *app
+    command: ["finops-web"]
+    ports:
+      - "127.0.0.1:5000:5000"
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+
+  worker:
+    <<: *app
+    command: ["finops-worker"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+
+volumes:
+  pgdata:
+  uploads:
