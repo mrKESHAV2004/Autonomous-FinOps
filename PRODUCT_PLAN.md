@@ -145,7 +145,7 @@ Each phase ends in something runnable. Sizing assumes one developer.
 - [x] Retention: `finops-cleanup` deletes raw uploads older than `FINOPS_RETENTION_DAYS` (90); results are kept and each deletion is audited.
 - [x] `docker-compose.yml`: web, worker, PostgreSQL, Redis and a one-shot migration.
 
-**Result:** the upload request returns in about 0.1 s; on the Docker stack the RQ worker analysed `focus_sample_10000.csv` in 1.8 s, and the result survived a web restart. 163 tests locally (172 in CI, where the database tests also run on PostgreSQL), 96% coverage.
+**Result:** the upload request returns in about 0.1 s; on the Docker stack the RQ worker analysed `focus_sample_10000.csv` in 1.8 s, and the result survived a web restart. 163 tests locally (173 in CI, where the database tests also run on PostgreSQL), 96% coverage.
 
 **Deferred:** the S3 storage backend (Phase 6, with deployment); a command to re-queue jobs lost from Redis; `Finding.status` changes (fix, snooze) arrive with the Phase 4 workflow.
 
