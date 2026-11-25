@@ -38,6 +38,15 @@ Diagrams are written in [Mermaid](https://mermaid.js.org/), which renders on Git
 
 # Part A — Current system
 
+> **Status (2026-11-25):** Part A describes the version-4 design that version-5
+> started from. Phase 1 has since changed the engine: findings are per
+> **resource** (`finops_core/resources.py`: idle / overpriced / ml_outlier
+> signals, waste = cost above the peer median), the row ensemble in §5 is only a
+> supporting signal with its confidence bug fixed, and the request path uses the
+> statistical forecast in `forecast_baseline.py` instead of training the LSTM in
+> §6 (now offline-only). Problems 1–4 in §8 are resolved; see
+> [PRODUCT_PLAN.md](PRODUCT_PLAN.md) Phase 1 for details.
+
 ## 1. System context (today)
 
 One user, one machine, a manual CSV upload. Nothing is stored except the uploaded file.

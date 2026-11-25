@@ -123,17 +123,19 @@ Each phase ends in something runnable. Sizing assumes one developer.
 - **LSTM forecasts are not reproducible on short histories, even in version 4:** repeated runs spread 12% (`focus_sample`, 25 days) and 24% (`focus_sample_10000`, 30 days), vs 0.3% on 100 days. Strengthens the case for a statistical baseline below.
 - Features are computed before zero/negative-cost rows (credits) are dropped, causing harmless `log1p` warnings; filter first.
 
-### Phase 1 — Core engine refactor (≈1–2 weeks)
-- [ ] ~~Split `ml.py` into `finops_core` modules~~ (done in Phase 0). Return frozen dataclasses instead of dicts / DataFrames with side columns.
-- [ ] Fix the inverted confidence score (see Phase 0 findings) and update the golden files deliberately.
-- [ ] **Schema contract** (`schema.py`): required FOCUS columns, type coercion, clear user-facing errors ("missing column `EffectiveCost`").
-- [ ] **Resource-level detection:** aggregate rows by `ResourceId` (fallback: `ServiceName` + `RegionId` + `SubAccountId`) over the window, compute utilisation features (cost trend, usage trend, cost/usage ratio, days since last usage), then score resources. Keep the row-level ensemble as a secondary signal.
-- [ ] **Explainability:** each finding carries a reason ("cost $X/day, usage ≈0 for 14 days") and its top contributing features.
-- [ ] **Fix forecast cost:** stop retraining the LSTM per request. In order of preference: (a) seasonal/statistical baseline per tenant, cached; (b) LSTM trained offline per tenant on a schedule and loaded from the artifact store. Always keep a naive baseline and report whether the model beats it.
-- [ ] Deterministic seeds; record model version + feature list with every result.
-- [ ] CLI: `finops analyze path/to/file.csv --out result.json`.
+### Phase 1 — Core engine refactor (≈1–2 weeks) — ✅ done 2026-11-25
+- [x] Results are frozen dataclasses (`finops_core/models.py`: `Finding`, `ForecastResult`, `AnalysisResult`).
+- [x] Inverted confidence score fixed; regression test added; golden files deliberately re-baselined.
+- [x] **Schema contract** (`schema.py`): required columns with common aliases (`UnblendedCost`, `UsageQuantity`, …) and a user-facing error listing accepted names. Zero/negative-cost rows are dropped *before* feature engineering.
+- [x] **Resource-level detection** (`resources.py`): rows grouped by `ResourceId` → `ServiceName|RegionId|SubAccountId` → line item. Signals: *idle* (zero usage), *overpriced* (≥3× the peer median cost-per-unit **and** modified z-score ≥ 3.5 within service + unit), *ml_outlier* (row ensemble, supporting only). Waste = full cost if idle, else cost above the peer median — not the whole bill.
+- [x] **Explainability:** every finding has plain-English reasons and the signals that fired.
+- [x] **Forecast:** statistical baseline (`forecast_baseline.py`: 7-day moving average vs weekly-seasonal, picked by last-week backtest) in every analysis; the LSTM is offline-only (`finops-train`), and `training_metadata.json` records whether it beat the baseline. TensorFlow moved to the optional `[ml]` extra.
+- [x] Deterministic results; `analysis_version` recorded with every result.
+- [x] CLI: `finops-analyze file.csv --out result.json`.
 
-**Done when:** the core package has ≥ 80% coverage, `focus_sample_10000.csv` analyses in < 30 s on a laptop, and findings are grouped by resource with explanations.
+**Result:** `focus_sample_10000.csv` analyses in ~1.5 s (was ~17 s); estimated waste 11.7% of spend across 11 resources (version 4 reported ~48% of rows' cost). 106 tests, 96% coverage.
+
+**Deferred** (needs data with longer per-resource history than the samples have): cost/usage *trend* features and "days since last usage"; per-tenant caching of forecasts (comes with the database in Phase 2).
 
 ### Phase 2 — Persistence & async jobs (≈1–2 weeks)
 - [ ] SQLAlchemy models: `Organization`, `User`, `Membership(role)`, `Dataset`, `Analysis(status, model_version, started/finished)`, `Finding(resource_id, service, region, account, est_monthly_waste, confidence, reason, status)`, `ForecastPoint`, `AuditLog`.
