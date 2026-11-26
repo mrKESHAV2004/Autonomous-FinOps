@@ -1,7 +1,8 @@
 """Shape a core :class:`AnalysisResult` into the dict ``dashboard.html`` renders.
 
 All analysis happens in :func:`finops_core.pipeline.analyze`; this module only
-adds savings maths, charts, recommendation cards and table rows. No Flask
+adds savings maths, recommendation cards and table rows (charts are drawn in
+the browser from the JSON API). No Flask
 imports, so it can move into a background worker in Phase 2.
 """
 
@@ -11,7 +12,6 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
-from finops_app.plots import generate_plots
 from finops_core.models import AnalysisResult, Finding
 from finops_core.pipeline import analyze
 from finops_core.recommendations import generate_recommendations
@@ -91,11 +91,11 @@ def build_dashboard(result: AnalysisResult, completed_at: datetime | None = None
             f"(${result.total_waste:,.2f}, {result.waste_percentage:.1f}% of spend)",
             f"Forecast uses a {method}{accuracy}",
         ],
-        "plots": generate_plots(result),
         "recommendations": recommendations,
         "waste_by_service": _waste_by_service(result),
         "confidence_summary": result.confidence_summary(),
         "findings": _finding_rows(result.findings),
+        "forecast_method": method,
         "analysis_version": result.analysis_version,
         "analysis_time": (completed_at or datetime.now(UTC)).strftime("%Y-%m-%d %H:%M:%S UTC"),
     }

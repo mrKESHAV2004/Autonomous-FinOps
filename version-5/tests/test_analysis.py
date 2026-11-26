@@ -50,7 +50,6 @@ def test_dashboard_lists_findings_with_reasons() -> None:
     assert row["why"] == "Pays 5× peers"
     assert row["est_waste"] == "$12.50"
     assert data["waste_by_service"][0][0] == "Compute"
-    assert set(data["plots"]) == {"main_plot", "zombie_analysis"}
     assert data["analysis_version"].startswith("phase1")
 
 
@@ -65,7 +64,6 @@ def test_empty_findings_render_friendly_messages() -> None:
     data = build_dashboard(result())
     assert data["findings"] == []
     assert data["waste_by_service"] == []
-    assert set(data["plots"]) == {"main_plot"}
 
 
 def test_run_analysis_end_to_end(make_billing_csv: Callable[..., Path]) -> None:

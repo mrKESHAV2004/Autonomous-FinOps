@@ -11,6 +11,7 @@ import logging
 from functools import lru_cache
 
 from finops_app import repository as repo
+from finops_app import triage
 from finops_app.config import Config
 from finops_app.db import Database
 from finops_app.storage import LocalStorage, Storage
@@ -45,6 +46,10 @@ def process_analysis(db: Database, storage: Storage, org_id: str, analysis_id: s
             return
         if isinstance(outcome, AnalysisResult):
             repo.save_result(session, analysis, outcome)
+            session.flush()
+            carried = triage.carry_over(session, analysis)
+            if carried:
+                logger.info("Carried over decisions", extra={"analysis": analysis_id, "n": carried})
         else:
             repo.mark_failed(session, analysis, outcome)
     logger.info(

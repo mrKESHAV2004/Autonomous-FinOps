@@ -7,11 +7,12 @@ Every table that holds customer data carries ``org_id``; queries go through
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 
 from sqlalchemy import (
     JSON,
+    Date,
     DateTime,
     Float,
     ForeignKey,
@@ -133,7 +134,10 @@ class Finding(Base):
     """One wasteful resource found by an analysis."""
 
     __tablename__ = "findings"
-    __table_args__ = (Index("ix_findings_org_analysis", "org_id", "analysis_id"),)
+    __table_args__ = (
+        Index("ix_findings_org_analysis", "org_id", "analysis_id"),
+        Index("ix_findings_org_resource", "org_id", "resource_key"),
+    )
 
     id: Mapped[str] = mapped_column(String(ID_LENGTH), primary_key=True, default=new_id)
     org_id: Mapped[str] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"))
@@ -154,9 +158,37 @@ class Finding(Base):
     confidence: Mapped[str] = mapped_column(String(16))
     signals: Mapped[list[Any]] = mapped_column(JSON)
     reasons: Mapped[list[Any]] = mapped_column(JSON)
-    status: Mapped[str] = mapped_column(String(16), default="open")  # open | snoozed | fixed
+    # open | acknowledged | fixed | snoozed | false_positive (see finops_app.triage)
+    status: Mapped[str] = mapped_column(String(16), default="open")
+    snoozed_until: Mapped[date | None] = mapped_column(Date)
+    status_changed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     analysis: Mapped[Analysis] = relationship(back_populates="findings")
+    events: Mapped[list[FindingEvent]] = relationship(
+        back_populates="finding",
+        order_by="FindingEvent.created_at.desc()",
+        cascade="all, delete-orphan",
+    )
+
+
+class FindingEvent(Base):
+    """One status change on a finding: who, when, from what to what, and why."""
+
+    __tablename__ = "finding_events"
+    __table_args__ = (Index("ix_finding_events_org_finding", "org_id", "finding_id"),)
+
+    id: Mapped[str] = mapped_column(String(ID_LENGTH), primary_key=True, default=new_id)
+    org_id: Mapped[str] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"))
+    finding_id: Mapped[str] = mapped_column(ForeignKey("findings.id", ondelete="CASCADE"))
+    user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    from_status: Mapped[str] = mapped_column(String(16))
+    to_status: Mapped[str] = mapped_column(String(16))
+    note: Mapped[str | None] = mapped_column(Text)
+    snoozed_until: Mapped[date | None] = mapped_column(Date)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    finding: Mapped[Finding] = relationship(back_populates="events")
+    user: Mapped[User | None] = relationship()
 
 
 class ForecastPoint(Base):

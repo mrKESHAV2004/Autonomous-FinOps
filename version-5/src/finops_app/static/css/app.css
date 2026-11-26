@@ -228,3 +228,81 @@ code { font-family: var(--font-outlier); font-size: 0.875em; }
   .topbar__nav { width: 100%; justify-content: flex-start; gap: var(--space-xs) var(--space-md); }
   .topbar__nav .btn { margin-left: auto; }
 }
+
+/* Analysis tabs */
+.tabs { display: flex; gap: var(--space-lg); margin-bottom: var(--space-lg); border-bottom: var(--rule-hair) solid var(--color-rule); }
+.tabs a { padding-block: var(--space-sm); margin-bottom: -1px; border-bottom: 2px solid transparent; color: var(--color-ink-2); font-weight: 500; text-decoration: none; }
+.tabs a:hover { color: var(--color-ink); }
+.tabs a[aria-current="page"] { color: var(--color-ink); border-bottom-color: var(--color-accent-2); }
+.tabs a:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.tabs__count { margin-left: var(--space-2xs); color: var(--color-muted); font-family: var(--font-outlier); font-size: var(--text-sm); }
+
+/* Charts */
+.chart__canvas { position: relative; height: 320px; }
+.chart__canvas--short { height: 220px; }
+.chart__data { margin-top: var(--space-md); }
+.chart__data summary { cursor: pointer; color: var(--color-ink-2); font-weight: 500; }
+.chart__data summary:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.chart__data table { margin-top: var(--space-sm); }
+.chart--bars { margin-bottom: var(--space-md); }
+
+/* Triage summary */
+.triage { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-sm); margin: 0; padding: 0; list-style: none; }
+.triage a { display: grid; gap: var(--space-2xs); padding: var(--space-md); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-input); background: var(--color-cotton); color: var(--color-ink); text-decoration: none; }
+.triage a:hover { border-color: var(--color-print); }
+.triage a:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.triage__label { color: var(--color-muted); font-size: var(--text-sm); font-weight: 500; }
+.triage__count { font-family: var(--font-outlier); font-size: var(--app-figure); font-variant-numeric: tabular-nums; line-height: 1.2; }
+.triage__waste { color: var(--color-ink-2); font-family: var(--font-outlier); font-size: var(--text-sm); }
+.triage__item--open a { border-left: 3px solid var(--color-accent-2); }
+
+/* Status pills */
+.status { display: inline-block; padding: 0 var(--space-xs); border-radius: var(--radius-input); font-size: var(--text-xs); font-weight: 600; line-height: 1.7; white-space: nowrap; border: var(--rule-hair) solid currentColor; }
+.status--open { color: var(--color-accent-2); }
+.status--acknowledged { color: var(--color-ink-2); }
+.status--fixed { color: var(--color-success); }
+.status--snoozed, .status--false_positive { color: var(--color-muted); }
+.ledger .sub, .history .sub { display: block; color: var(--color-muted); font-size: var(--text-xs); font-weight: 400; }
+.ledger--findings tbody th a { color: var(--color-print); text-decoration-color: var(--color-rule-2); }
+.ledger--findings tbody th a:hover { text-decoration-color: var(--color-accent-2); }
+.ledger--findings a:focus-visible, .ledger--compact a:focus-visible, .more:focus-visible, .crumb a:focus-visible, .pager a:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.ledger--compact a { color: var(--color-print); text-decoration-color: var(--color-rule-2); }
+.more { color: var(--color-print); font-weight: 500; text-decoration-color: var(--color-accent-2); }
+
+/* Findings filters and pager */
+.filters { display: flex; flex-wrap: wrap; align-items: end; gap: var(--space-sm) var(--space-md); margin-bottom: var(--space-md); }
+.filters label { display: grid; gap: var(--space-2xs); color: var(--color-muted); font-size: var(--text-sm); font-weight: 500; }
+.filters input, .filters select { min-height: 40px; max-width: 16rem; padding: 0 var(--space-sm); border: var(--rule-hair) solid var(--color-rule-2); border-radius: var(--radius-input); background: var(--color-paper); color: var(--color-ink); font: 400 var(--text-md) var(--font-body); }
+.filters input:focus-visible, .filters select:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 1px; }
+.filters__actions { display: flex; align-items: center; gap: var(--space-md); }
+.pager { display: flex; align-items: center; justify-content: center; gap: var(--space-lg); padding-top: var(--space-lg); color: var(--color-muted); }
+.pager a { color: var(--color-print); font-weight: 500; text-decoration-color: var(--color-accent-2); }
+
+/* Finding detail */
+.crumb { padding-top: var(--space-lg); }
+.crumb a { color: var(--color-ink-2); text-decoration-color: var(--color-rule-2); }
+.finding-title { overflow-wrap: anywhere; }
+.finding-status { align-self: end; }
+.finding-status .status { font-size: var(--text-sm); }
+.reasons { margin: 0 0 var(--space-md); padding-left: var(--space-lg); color: var(--color-ink); }
+.reasons li + li { margin-top: var(--space-xs); }
+.signals { margin: 0; }
+.signals > div { padding-block: var(--space-sm); border-top: var(--rule-hair) solid var(--color-rule); }
+.signals dt { font-weight: 600; }
+.signals dd { margin: var(--space-2xs) 0 0; color: var(--color-ink-2); }
+.action-title, .history-title { margin-top: var(--space-xl); font-size: var(--app-h3); }
+.action-text { margin-top: var(--space-xs); padding: var(--space-md); border-left: 3px solid var(--color-success); background: var(--color-paper-2); }
+.status-form textarea { min-height: 5rem; padding: var(--space-xs) var(--space-sm); border: var(--rule-hair) solid var(--color-rule-2); border-radius: var(--radius-input); background: var(--color-paper); color: var(--color-ink); font: 400 var(--text-md)/1.5 var(--font-body); resize: vertical; }
+.status-form textarea:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 1px; }
+.history { margin: var(--space-sm) 0 0; padding: 0; list-style: none; }
+.history li { padding-block: var(--space-sm); border-top: var(--rule-hair) solid var(--color-rule); }
+.history__note { margin-top: var(--space-2xs); color: var(--color-ink-2); white-space: pre-line; }
+
+@media (max-width: 60rem) {
+  .triage { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 40rem) {
+  .triage { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .filters label, .filters input, .filters select { width: 100%; max-width: none; }
+  .chart__canvas { height: 260px; }
+}

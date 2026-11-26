@@ -27,7 +27,10 @@ from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
 from finops_app import analysis as dashboard
+from finops_app import finding_queries as fq
 from finops_app import repository as repo
+from finops_app import serializers as ser
+from finops_app import triage
 from finops_app.auth import current_org_id, role_required
 from finops_app.config import Config
 from finops_app.db import get_session
@@ -42,6 +45,7 @@ logger = logging.getLogger(__name__)
 bp = Blueprint("web", __name__)
 
 INCOMING_DIR = ".incoming"
+OVERVIEW_TOP = 5
 SAMPLE_CSV = """UsageDate,ServiceCategory,EffectiveCost,ConsumedQuantity
 2024-01-01,Compute,125.50,100
 2024-01-01,Storage,45.25,50
@@ -134,10 +138,25 @@ def _analysis_or_404(analysis_id: str) -> Analysis:
 @role_required("viewer")
 def show_analysis(analysis_id: str) -> str:
     found = _analysis_or_404(analysis_id)
-    if found.status == "succeeded":
-        results = dashboard.build_dashboard(repo.load_result(found), found.finished_at)
-        return render_template("dashboard.html", results=results, analysis=found)
-    return render_template("analysis_status.html", analysis=found)
+    if found.status != "succeeded":
+        return render_template("analysis_status.html", analysis=found)
+    session = get_session()
+    if triage.wake_expired_snoozes(session, found.org_id, found.id):
+        session.commit()
+    results = dashboard.build_dashboard(repo.load_result(found), found.finished_at)
+    top = fq.list_page(
+        session, found.org_id, found.id, fq.FindingQuery(status="active", per_page=OVERVIEW_TOP)
+    )
+    return render_template(
+        "dashboard.html",
+        results=results,
+        analysis=found,
+        summary=fq.status_summary(session, found.org_id, found.id),
+        top=[ser.finding_dict(f) for f in top.items],
+        series=ser.series_dict(found),
+        active_total=top.total,
+        status_labels=triage.STATUS_LABELS,
+    )
 
 
 @bp.get("/analyses/<analysis_id>/status")

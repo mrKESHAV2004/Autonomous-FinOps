@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 {% include "_app_head.html" %}
-    <title>FinOps Dashboard</title>
+    <title>{{ analysis.dataset.original_filename }} · Overview</title>
     <meta name="description" content="Wasteful cloud resources found in your billing file, with the reason for each and a 7-day spend forecast.">
 </head>
 <body>
@@ -12,11 +12,11 @@
     <main class="container">
         <section class="page-head" aria-labelledby="page-title">
             <div>
-                <h1 id="page-title">Autonomous FinOps Engine</h1>
-                <p class="lead">AI-powered cloud cost optimization &amp; waste detection</p>
-                <p class="page-head__meta">Analysis completed {{ results.analysis_time }}</p>
+                <h1 id="page-title">{{ analysis.dataset.original_filename }}</h1>
+                <p class="page-head__meta">{{ "{:,}".format(results.total_records) }} records over {{ results.period_days }} days · analysis completed {{ results.analysis_time }}</p>
             </div>
         </section>
+{% set tab = 'overview' %}{% include "_analysis_nav.html" %}
 
         <section class="summary stock" aria-labelledby="insight-title">
             <h2 id="insight-title">{{ results.insight_headline }}</h2>
@@ -43,72 +43,61 @@
             </dl>
         </section>
 
+        <section class="block" aria-labelledby="triage-title">
+            <div class="block__head">
+                <h2 id="triage-title">Triage</h2>
+                <p class="block__note">Estimated waste by where each finding stands.</p>
+            </div>
+            <ul class="triage">
+                {% for status, label in status_labels.items() %}
+                <li class="triage__item triage__item--{{ status }}">
+                    <a href="{{ url_for('web.findings', analysis_id=analysis.id, status=status) }}">
+                        <span class="triage__label">{{ label }}</span>
+                        <span class="triage__count">{{ "{:,}".format(summary[status].count) }}</span>
+                        <span class="triage__waste">${{ "{:,.2f}".format(summary[status].waste) }}</span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
+
         <section class="block" aria-labelledby="findings-title">
             <div class="block__head">
-                <h2 id="findings-title">Detected zombie resources</h2>
-                {% if results.zombie_count|replace(',','')|int > 10 %}
-                <p class="block__note">Showing top 10 of {{ results.zombie_count }} zombie resources</p>
-                {% endif %}
+                <h2 id="findings-title">Biggest open findings</h2>
+                {% if active_total %}<p class="block__note"><a class="more" href="{{ url_for('web.findings', analysis_id=analysis.id, status='active') }}">See all {{ "{:,}".format(active_total) }} open and acknowledged</a></p>{% endif %}
             </div>
             <div class="sheet stock">
-                {% if results.findings %}
-                <table class="ledger ledger--findings">
-                    <thead>
-                        <tr>
-                            <th scope="col">Resource</th>
-                            <th scope="col">Service</th>
-                            <th scope="col">Region</th>
-                            <th scope="col" class="num">Est. waste</th>
-                            <th scope="col" class="num">Per month</th>
-                            <th scope="col">Confidence</th>
-                            <th scope="col">Why</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for f in results.findings %}
-                        <tr>
-                            <th scope="row">{{ f.label }}</th>
-                            <td>{{ f.service }}</td>
-                            <td>{{ f.region }}</td>
-                            <td class="num">{{ f.est_waste }}</td>
-                            <td class="num">{{ f.per_month }}</td>
-                            <td><span class="tag tag--{{ f.confidence | lower }}">{{ f.confidence }}</span></td>
-                            <td class="why">{{ f.why }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                {% if top %}
+                {% set rows = top %}{% include "_findings_table.html" %}
+                {% elif results.findings %}
+                <p class="empty">Every finding has been triaged. <a class="more" href="{{ url_for('web.findings', analysis_id=analysis.id) }}">Review them</a></p>
                 {% else %}
                 <p class="empty">No wasteful resources detected. Your cloud spend appears to be efficient.</p>
                 {% endif %}
             </div>
         </section>
 
-        {% if results.recommendations %}
-        <section class="block" aria-labelledby="recs-title">
-            <div class="block__head">
-                <h2 id="recs-title">Actionable recommendations</h2>
-            </div>
-            <ul class="recs">
-                {% for rec in results.recommendations %}
-                <li class="priority-{{ rec.priority }}">
-                    <h3>{{ rec.title }} <span class="tag tag--{{ rec.priority }}">{{ rec.priority|capitalize }} priority</span></h3>
-                    <div>
-                        <p class="desc">{{ rec.description }}</p>
-                        <p class="action"><strong>Action:</strong> {{ rec.action }}</p>
-                    </div>
-                </li>
-                {% endfor %}
-            </ul>
-        </section>
-        {% endif %}
-
         <section class="block" aria-labelledby="forecast-title">
             <div class="block__head">
-                <h2 id="forecast-title">Cost forecast &amp; optimization</h2>
+                <h2 id="forecast-title">Spend and 7-day forecast</h2>
+                <p class="block__note">Forecast uses a {{ results.forecast_method }}. The shaded band is the 95% range.</p>
             </div>
             <figure class="chart stock">
-                <img src="data:image/png;base64,{{ results.plots.main_plot }}" alt="Daily spend with the 7-day business-as-usual and optimized forecasts, beside a bar chart of findings by confidence level.">
+                <div class="chart__canvas"><canvas id="spend-chart" role="img" aria-label="Daily spend, then the business-as-usual and optimized 7-day forecasts. The same numbers are in the table below." data-series-url="{{ url_for('api.get_series', analysis_id=analysis.id) }}"></canvas></div>
+                <details class="chart__data">
+                    <summary>Show the numbers</summary>
+                    <table class="ledger ledger--compact">
+                        <thead><tr><th scope="col">Day</th><th scope="col" class="num">Spend</th><th scope="col" class="num">Forecast</th><th scope="col" class="num">Optimized</th></tr></thead>
+                        <tbody>
+                            {% for day, cost in series.daily.dates | zip(series.daily.costs) %}
+                            <tr><th scope="row">{{ day }}</th><td class="num">${{ "{:,.2f}".format(cost) }}</td><td></td><td></td></tr>
+                            {% endfor %}
+                            {% for day, value, opt in series.forecast.dates | zip(series.forecast["values"], series.forecast.optimised) %}
+                            <tr><th scope="row">{{ day }}</th><td></td><td class="num">${{ "{:,.2f}".format(value) }}</td><td class="num">${{ "{:,.2f}".format(opt) }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </details>
             </figure>
         </section>
 
@@ -117,17 +106,14 @@
                 <div class="block__head">
                     <h2>Top waste categories</h2>
                 </div>
-                {% if results.plots.zombie_analysis %}
-                <figure class="chart stock">
-                    <img src="data:image/png;base64,{{ results.plots.zombie_analysis }}" alt="Estimated waste by service, largest first.">
-                    <figcaption>Waste distribution by service</figcaption>
-                </figure>
-                {% endif %}
                 {% if results.waste_by_service %}
+                <figure class="chart stock chart--bars">
+                    <div class="chart__canvas chart__canvas--short"><canvas id="service-chart" role="img" aria-label="Estimated waste by service, largest first. The same numbers are in the table below." data-summary-url="{{ url_for('api.get_analysis', analysis_id=analysis.id) }}"></canvas></div>
+                </figure>
                 <table class="ledger ledger--compact">
                     <tbody>
                         {% for service, waste in results.waste_by_service %}
-                        <tr><th scope="row">{{ service }}</th><td class="num">{{ waste }}</td></tr>
+                        <tr><th scope="row"><a href="{{ url_for('web.findings', analysis_id=analysis.id, service=service) }}">{{ service }}</a></th><td class="num">{{ waste }}</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -150,6 +136,25 @@
                     Low = ML flag only.</p>
             </div>
         </section>
+
+        {% if results.recommendations %}
+        <section class="block" aria-labelledby="recs-title">
+            <div class="block__head">
+                <h2 id="recs-title">Actionable recommendations</h2>
+            </div>
+            <ul class="recs">
+                {% for rec in results.recommendations %}
+                <li class="priority-{{ rec.priority }}">
+                    <h3>{{ rec.title }} <span class="tag tag--{{ rec.priority }}">{{ rec.priority|capitalize }} priority</span></h3>
+                    <div>
+                        <p class="desc">{{ rec.description }}</p>
+                        <p class="action"><strong>Action:</strong> {{ rec.action }}</p>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
+        {% endif %}
 
         <section class="board" aria-labelledby="savings-title">
             <h2 id="savings-title">Total savings opportunity</h2>
@@ -180,5 +185,7 @@
             <p>Analysis completed {{ results.analysis_time }}</p>
         </footer>
     </main>
+    <script src="{{ url_for('static', filename='vendor/chart-4.4.7.umd.min.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/charts.js') }}" defer></script>
 </body>
 </html>

@@ -3,10 +3,19 @@
 from __future__ import annotations
 
 from flask_wtf import FlaskForm
-from wtforms import EmailField, HiddenField, PasswordField, SelectField, StringField
-from wtforms.validators import DataRequired, Email, Length
+from wtforms import (
+    DateField,
+    EmailField,
+    HiddenField,
+    PasswordField,
+    SelectField,
+    StringField,
+    TextAreaField,
+)
+from wtforms.validators import DataRequired, Email, Length, Optional
 
 from finops_app.accounts import MAX_PASSWORD_LENGTH, ROLES
+from finops_app.triage import NOTE_MAX, STATUS_LABELS
 
 ROLE_CHOICES = [(r, r.capitalize()) for r in ROLES]
 EMAIL_MAX = 320
@@ -63,3 +72,9 @@ class SwitchOrgForm(FlaskForm):
 
 class ConfirmForm(FlaskForm):
     """A form with only the CSRF token: sign out, remove member."""
+
+
+class StatusForm(FlaskForm):
+    status = SelectField("New status", choices=list(STATUS_LABELS.items()))
+    snoozed_until = DateField("Snooze until", validators=[Optional()])
+    note = TextAreaField("Note", filters=[_strip], validators=[Length(max=NOTE_MAX)])

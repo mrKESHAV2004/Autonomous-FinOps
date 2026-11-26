@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% include "_app_head.html" %}
+    <title>{{ analysis.dataset.original_filename }} · Findings</title>
+    <meta name="description" content="Every wasteful resource found in this billing file, with filters and status.">
+</head>
+<body>
+{% set active = 'analysis' %}
+{% include "_app_topbar.html" %}
+    <main class="container">
+        <section class="page-head" aria-labelledby="page-title">
+            <div>
+                <h1 id="page-title">{{ analysis.dataset.original_filename }}</h1>
+                <p class="page-head__meta">{{ "{:,}".format(analysis.findings | length) }} findings · ${{ "{:,.2f}".format(summary.open.waste + summary.acknowledged.waste) }} still open or acknowledged</p>
+            </div>
+            <a class="btn btn--card" href="{{ url_for('web.export_findings', analysis_id=analysis.id, **query.args(page=1)) }}" download>Export CSV{% if query.is_filtered %} (filtered){% endif %}</a>
+        </section>
+{% set tab = 'findings' %}{% include "_analysis_nav.html" %}
+
+        <form method="get" class="filters" aria-label="Filter findings">
+            <label>Search <input type="search" name="q" value="{{ query.q or '' }}" placeholder="Name or ID" maxlength="200"></label>
+            <label>Status
+                <select name="status">
+                    <option value="">Any</option>
+                    <option value="active"{% if query.status == 'active' %} selected{% endif %}>Open or acknowledged</option>
+                    {% for value, label in status_labels.items() %}<option value="{{ value }}"{% if query.status == value %} selected{% endif %}>{{ label }} ({{ summary[value].count }})</option>{% endfor %}
+                </select>
+            </label>
+            {% for field, label in (("service", "Service"), ("region", "Region"), ("account", "Account"), ("confidence", "Confidence")) %}
+            {% if facets[field] %}
+            <label>{{ label }}
+                <select name="{{ field }}">
+                    <option value="">Any</option>
+                    {% for value in facets[field] %}<option value="{{ value }}"{% if query[field] == value %} selected{% endif %}>{{ value }}</option>{% endfor %}
+                </select>
+            </label>
+            {% endif %}
+            {% endfor %}
+            <label>Sort by
+                <select name="sort">
+                    {% for value, label in (("waste", "Est. waste"), ("monthly", "Per month"), ("cost", "Total cost"), ("name", "Name")) %}<option value="{{ value }}"{% if query.sort == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+                </select>
+            </label>
+            <div class="filters__actions">
+                <button type="submit" class="btn btn--ink">Apply</button>
+                {% if query.is_filtered %}<a class="more" href="{{ url_for('web.findings', analysis_id=analysis.id) }}">Clear filters</a>{% endif %}
+            </div>
+        </form>
+
+        <section class="block" aria-labelledby="results-title">
+            <div class="block__head">
+                <h2 id="results-title" aria-live="polite">{{ "{:,}".format(page.total) }} {{ "finding" if page.total == 1 else "findings" }}{% if query.is_filtered %} match{% endif %}</h2>
+                {% if page.pages > 1 %}<p class="block__note">Page {{ page.page }} of {{ page.pages }}</p>{% endif %}
+            </div>
+            <div class="sheet stock">
+                {% if rows %}
+                {% include "_findings_table.html" %}
+                {% else %}
+                <p class="empty">No findings match these filters.</p>
+                {% endif %}
+            </div>
+            {% if page.pages > 1 %}
+            <nav class="pager" aria-label="Pages">
+                {% if page.page > 1 %}<a href="{{ url_for('web.findings', analysis_id=analysis.id, **query.args(page=page.page - 1)) }}" rel="prev">Previous</a>{% endif %}
+                <span>Page {{ page.page }} of {{ page.pages }}</span>
+                {% if page.page < page.pages %}<a href="{{ url_for('web.findings', analysis_id=analysis.id, **query.args(page=page.page + 1)) }}" rel="next">Next</a>{% endif %}
+            </nav>
+            {% endif %}
+        </section>
+    </main>
+</body>
+</html>

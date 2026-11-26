@@ -97,7 +97,9 @@ def test_successful_upload_renders_dashboard_and_stores_file(
     body = _upload(client, make_billing_csv(days=10).read_bytes())
 
     assert "Cloud Waste Analysis Complete" in body
-    assert "data:image/png;base64," in body
+    assert 'id="spend-chart"' in body
+    assert "vendor/chart-4.4.7.umd.min.js" in body
+    assert "data:image/png" not in body
     stored = [p for p in Path(config.upload_dir).rglob("*.csv") if ".incoming" not in p.parts]
     assert len(stored) == 1
     assert not list((Path(config.upload_dir) / ".incoming").iterdir())

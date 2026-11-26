@@ -22,6 +22,7 @@ from flask import (
     abort,
     flash,
     g,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -33,6 +34,7 @@ from flask_login import (
     UserMixin,
     current_user,
     login_required,
+    login_url,
     login_user,
     logout_user,
 )
@@ -99,6 +101,16 @@ def init_app(app: Flask, cfg: Config) -> None:
     app.before_request(_load_active_org)
     app.context_processor(_template_context)
     app.register_blueprint(bp)
+
+
+@login_manager.unauthorized_handler
+def _unauthorized() -> Response | tuple[Response, int]:
+    """API calls get a 401; pages redirect to sign-in and come back after."""
+    if request.path.startswith("/api/"):
+        body = {"success": False, "data": None, "error": "Sign in first."}
+        return jsonify(body), 401
+    flash(login_manager.login_message, "info")
+    return redirect(login_url("auth.login", request.url))
 
 
 @login_manager.user_loader

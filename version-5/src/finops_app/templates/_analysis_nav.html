@@ -1,0 +1,4 @@
+        <nav class="tabs" aria-label="This analysis">
+            <a href="{{ url_for('web.show_analysis', analysis_id=analysis.id) }}"{% if tab == 'overview' %} aria-current="page"{% endif %}>Overview</a>
+            <a href="{{ url_for('web.findings', analysis_id=analysis.id) }}"{% if tab == 'findings' %} aria-current="page"{% endif %}>Findings <span class="tabs__count">{{ "{:,}".format(analysis.findings | length) }}</span></a>
+        </nav>

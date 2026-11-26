@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% include "_app_head.html" %}
+    <title>{{ data.label }} · Finding</title>
+    <meta name="description" content="Why this resource was flagged, what to do about it, and its history.">
+</head>
+<body>
+{% set active = 'analysis' %}
+{% include "_app_topbar.html" %}
+    <main class="container">
+        <p class="crumb"><a href="{{ back }}">← Findings in {{ analysis.dataset.original_filename }}</a></p>
+        <section class="page-head" aria-labelledby="page-title">
+            <div>
+                <h1 id="page-title" class="finding-title">{{ data.label }}</h1>
+                <p class="page-head__meta">{{ data.service }} · {{ data.region or "Region not given" }}{% if data.account %} · account {{ data.account }}{% endif %}</p>
+            </div>
+            <p class="finding-status"><span class="status status--{{ data.status }}">{{ data.status_label }}</span>{% if data.status == 'snoozed' and data.snoozed_until %} <span class="sub">until {{ data.snoozed_until }}</span>{% endif %}</p>
+        </section>
+
+        <section class="block" aria-labelledby="numbers-title">
+            <h2 id="numbers-title" class="visually-hidden">Numbers</h2>
+            <dl class="stats">
+                <div><dt>Estimated waste</dt><dd>${{ "{:,.2f}".format(data.estimated_waste) }}<span class="stats__sub">Over {{ data.days_active }} active day{{ "" if data.days_active == 1 else "s" }}</span></dd></div>
+                <div><dt>Per month</dt><dd>${{ "{:,.2f}".format(data.estimated_monthly_waste) }}<span class="stats__sub">If nothing changes</span></dd></div>
+                <div><dt>Total cost</dt><dd>${{ "{:,.2f}".format(data.total_cost) }}<span class="stats__sub">In this file</span></dd></div>
+                <div><dt>Usage</dt><dd>{{ "{:,.2f}".format(data.total_usage) }}<span class="stats__sub">{{ data.unit or "units" }}</span></dd></div>
+            </dl>
+        </section>
+
+        <div class="split block">
+            <section aria-labelledby="why-title">
+                <div class="block__head"><h2 id="why-title">Why it was flagged</h2><span class="tag tag--{{ data.confidence | lower }}">{{ data.confidence }} confidence</span></div>
+                <ul class="reasons">{% for reason in data.reasons %}<li>{{ reason }}</li>{% endfor %}</ul>
+                <dl class="signals">
+                    {% for name, meaning in signals %}<div><dt>{{ name }}</dt><dd>{{ meaning }}</dd></div>{% endfor %}
+                </dl>
+                <h3 class="action-title">Recommended action</h3>
+                <p class="action-text">{{ action }}</p>
+            </section>
+
+            <section aria-labelledby="status-title">
+                <div class="block__head"><h2 id="status-title">Status</h2></div>
+                {% if can('analyst') %}
+                <form method="post" action="{{ url_for('web.change_status', finding_id=f.id) }}" class="fields status-form">
+                    {{ form.csrf_token }}
+                    <label>{{ form.status.label.text }} {{ form.status() }}</label>
+                    <label>{{ form.snoozed_until.label.text }} <span class="optional">(for Snoozed)</span>
+                        {{ form.snoozed_until(min=today.isoformat()) }}</label>
+                    <label>{{ form.note.label.text }} <span class="optional">(optional; for a false positive, say why)</span>
+                        {{ form.note(rows=3, maxlength=1000) }}</label>
+                    <button type="submit" class="btn btn--ink">Update status</button>
+                </form>
+                {% else %}
+                <p class="job__hint">Viewers can't change a finding's status. Ask an analyst or admin.</p>
+                {% endif %}
+
+                <h3 class="history-title">History</h3>
+                {% if events %}
+                <ol class="history">
+                    {% for e in events %}
+                    <li>
+                        <p><strong>{{ status_labels.get(e.from_status, e.from_status) }} → {{ status_labels.get(e.to_status, e.to_status) }}</strong>{% if e.snoozed_until %} until {{ e.snoozed_until }}{% endif %}</p>
+                        <p class="sub">{{ e.user.email if e.user else "Automatic" }} · {{ e.created_at.strftime("%Y-%m-%d %H:%M") }} UTC</p>
+                        {% if e.note %}<p class="history__note">{{ e.note }}</p>{% endif %}
+                    </li>
+                    {% endfor %}
+                </ol>
+                {% else %}
+                <p class="job__hint">No changes yet. It has been open since the analysis ran.</p>
+                {% endif %}
+            </section>
+        </div>
+    </main>
+</body>
+</html>
