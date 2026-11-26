@@ -4,7 +4,9 @@ Version 5 is the start of turning the prototype into a product.
 See [../PRODUCT_PLAN.md](../PRODUCT_PLAN.md) for the roadmap and
 [../ARCHITECTURE.md](../ARCHITECTURE.md) for diagrams.
 
-**Status:** Phase 4a (triage) done. Each analysis has an Overview with charts
+**Status:** Phase 4 (product UX) done. A savings page checks fixed resources
+against later uploads, admins can share a read-only report link, there is a
+dark theme, and new users can analyse a sample file in one click. Phase 4a: Each analysis has an Overview with charts
 and a Findings table with filters, CSV export, and a page per finding where
 analysts mark it acknowledged, fixed, snoozed or a false positive; decisions
 carry over to the next upload. Accounts, roles and tenant isolation (Phase 3)
@@ -57,6 +59,9 @@ version-5/
 │       ├── finding_text.py    # what each signal means, recommended actions
 │       ├── api.py             # JSON API (/api/v1)
 │       ├── serializers.py     # rows → dicts for the API and pages
+│       ├── sharing.py         # read-only share links, /savings page
+│       ├── savings.py         # fixed findings vs the latest upload
+│       ├── sample_data.py     # the generated sample billing file
 │       ├── analysis.py        # result → dashboard data
 │       ├── routes.py          # /, /upload, /analyses, /analyses/<id>[/status], /sample
 │       ├── static/            # Coral theme CSS, charts.js, vendor/Chart.js, captures
@@ -196,6 +201,14 @@ plus `"meta"` with paging on lists.
 | GET | `/analyses/<id>/findings` | findings; `service`, `region`, `account`, `confidence`, `status` (or `active`), `q`, `sort` (`waste`, `monthly`, `cost`, `name`), `page`, `per_page` (25/50/100) |
 | GET | `/findings/<id>` | one finding with signal explanations, recommended action and history |
 | POST | `/findings/<id>/status` | JSON `{"status", "note", "snoozed_until"}`; analyst or above; needs `X-CSRFToken` |
+
+## Phase 4b changes
+
+- **Savings** (`/savings`): resources marked Fixed, and whether your latest upload still flags them. "Realised" counts the ones it no longer flags. It can't measure how far spend dropped (only flagged resources are stored), and an upload that covers different accounts can make a resource drop out without being fixed.
+- **Share links:** owners and admins create a 7- or 30-day read-only link to an analysis overview from the bottom of its page, and revoke it there. Only a hash of the token is stored, so the link is shown once.
+- **Dark theme:** follows the system setting; the **Dark mode** switch in the top bar overrides it for that browser.
+- **First run:** an empty history and the upload page offer **Analyse the sample**; `/sample` downloads the same file (30 days, 24 resources, FOCUS column names).
+- **Accessibility:** a skip link; text contrast checked at WCAG AA on every app page in both themes.
 
 ## Phase 4a changes
 

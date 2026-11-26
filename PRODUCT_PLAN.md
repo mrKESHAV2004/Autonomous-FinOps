@@ -160,18 +160,21 @@ Each phase ends in something runnable. Sizing assumes one developer.
 
 **Accepted / deferred:** sign-up says when an email is already registered (rate-limited); no password reset or email invites until there is an email service; OAuth and API tokens come with the Phase 4 JSON API. In production, set `FINOPS_REDIS_URL` so rate-limit counters are shared (the app warns otherwise).
 
-### Phase 4 — Product UX (≈2 weeks) — 4a ✅ done 2026-11-26, 4b next
-Split in two. **4a (triage)** is done; **4b (savings and polish)** covers the rest.
+### Phase 4 — Product UX (≈2 weeks) — ✅ done 2026-11-26 (4a triage, 4b savings and polish)
 - [x] Replace matplotlib PNGs with client-side charts fed by the JSON API: Chart.js 4.4.7, vendored under `static/vendor` (checksum-checked against npm), so the CSP still allows only this site's scripts. Each chart has the same numbers in a table. matplotlib and seaborn left the dependencies.
 - [x] JSON API `/api/v1`: analyses, analysis summary (status and confidence counts, waste by service), daily and forecast series, findings (filter, sort, page) and finding detail; status changes by POST with the CSRF header. Same sign-in, roles and org scoping as the pages; one `{success, data, error, meta}` envelope; 401/403/404/409 as JSON.
 - [x] Screens: Overview (stats, triage strip by status, the biggest open findings, spend and forecast chart, waste by service) and Findings (filters for service, region, account, confidence, status and search; sort; pages) as tabs of an analysis, plus a Finding detail page (reasons, what each signal means, recommended action, status form, history). The forecast lives on the Overview rather than its own page. Tags as a filter wait for tag columns in the engine.
 - [x] Finding workflow: Open → Acknowledged → Fixed / Snoozed (until a date, up to 365 days) / False positive, analysts and above, with an optional note; every change is a `FindingEvent` and an audit entry. False-positive notes are kept for model tuning. **Decisions carry over** to the next upload by resource: false positives, acknowledgements and live snoozes stay; a resource marked fixed that shows up again is reopened with a note. Expired snoozes reopen.
-- [ ] **Savings tracker (4b):** when a finding is marked fixed, compare later datasets to confirm spend actually dropped; show realised vs. estimated savings.
+- [x] **Savings tracker (4b):** when a finding is marked fixed, compare later datasets to confirm spend actually dropped; show realised vs. estimated savings. Done as `/savings`: each resource marked Fixed is checked against the org's latest upload. Not flagged there → counted as realised; still flagged → "still wasting"; fixed in the latest upload → "waiting". *Limit:* the engine stores spend only for flagged resources, so this confirms the waste stopped being flagged, not by how much spend dropped; measuring the drop needs per-resource spend for every resource.
 - [x] Export findings to CSV (the current filters, UTF-8 with BOM, cells starting with `= + - @` prefixed so spreadsheets don't run them).
-- [ ] Shareable read-only report link (4b).
-- [ ] Accessibility (WCAG 2.2 AA) pass, dark/light theme, first-run guidance (4b). Layout is responsive already.
+- [x] Shareable read-only report link (4b): owners and admins create 7- or 30-day links to an analysis overview and can revoke them; only a SHA-256 of the token is stored; the shared page has no links into the app and is sent `no-store`, `no-referrer`, `noindex`.
+- [x] Accessibility pass (4b): every app page checked in the browser for WCAG AA text contrast in both themes (no failures), a skip link, visible focus on every control, charts backed by tables.
+- [x] Dark/light theme (4b): follows the system setting, with a switch in the top bar (remembered per browser); charts redraw in the new colours. App pages only; the landing page stays light.
+- [x] First-run guidance (4b): an empty history and the upload page offer "Analyse the sample", a generated 30-day FOCUS file with idle and unusual resources; `/sample` downloads the same file.
 
-**4a result:** 270 tests locally, 96% coverage. In the browser, a false positive marked on February's upload stayed a false positive on March's.
+**4a result:** 270 tests locally, 96% coverage.
+
+**4b result:** 277 tests locally, 97% coverage; share links, savings, the sample and both themes checked in the browser. In the browser, a false positive marked on February's upload stayed a false positive on March's.
 
 **Done when:** a new user can sign up, upload, triage findings and see savings without reading docs.
 

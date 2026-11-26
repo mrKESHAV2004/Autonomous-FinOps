@@ -64,6 +64,10 @@ Diagrams are written in [Mermaid](https://mermaid.js.org/), which renders on Git
 > browser charts (Chart.js, served from `/static`) replace the matplotlib PNGs.
 > Findings have a workflow (`finops_app/triage.py`, `finding_events` table) and
 > decisions carry over between uploads by `resource_key`.
+>
+> **Phase 4b (2026-11-26):** read-only share links (`share_links` table, token
+> hashes only), a savings page (`finops_app/savings.py`), dark theme tokens in
+> `app.css` switched by `static/js/theme.js`, and a generated sample file.
 
 ## 1. System context (today)
 
