@@ -59,6 +59,11 @@ Diagrams are written in [Mermaid](https://mermaid.js.org/), which renders on Git
 > the org chosen per request from the user's memberships. Security headers are
 > set in `finops_app/security.py` rather than Flask-Talisman. See
 > `version-5/docs/adr/0002-accounts-and-sessions.md`.
+>
+> **Phase 4a (2026-11-26):** the JSON API (`finops_app/api.py`, `/api/v1`) and
+> browser charts (Chart.js, served from `/static`) replace the matplotlib PNGs.
+> Findings have a workflow (`finops_app/triage.py`, `finding_events` table) and
+> decisions carry over between uploads by `resource_key`.
 
 ## 1. System context (today)
 

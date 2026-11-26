@@ -4,10 +4,11 @@ Version 5 is the start of turning the prototype into a product.
 See [../PRODUCT_PLAN.md](../PRODUCT_PLAN.md) for the roadmap and
 [../ARCHITECTURE.md](../ARCHITECTURE.md) for diagrams.
 
-**Status:** Phase 3 (accounts, tenancy and security) done. People sign up into
-their own organisation, roles control who can upload and manage members, and
-one organisation can never see another's data. Uploads return at once, analyses
-run on a worker and results are kept in a database. See the plan for details.
+**Status:** Phase 4a (triage) done. Each analysis has an Overview with charts
+and a Findings table with filters, CSV export, and a page per finding where
+analysts mark it acknowledged, fixed, snoozed or a false positive; decisions
+carry over to the next upload. Accounts, roles and tenant isolation (Phase 3)
+and background jobs (Phase 2) are in place. See the plan for details.
 
 ## Layout
 
@@ -50,10 +51,15 @@ version-5/
 │       ├── members.py         # /members: add, change role, remove
 │       ├── forms.py           # Flask-WTF forms (CSRF)
 │       ├── security.py        # CSP + headers, CSRF, rate limits
+│       ├── triage.py          # finding statuses, history, carry-over
+│       ├── finding_queries.py # filter / sort / page findings
+│       ├── findings_views.py  # findings table, CSV export, finding detail
+│       ├── finding_text.py    # what each signal means, recommended actions
+│       ├── api.py             # JSON API (/api/v1)
+│       ├── serializers.py     # rows → dicts for the API and pages
 │       ├── analysis.py        # result → dashboard data
-│       ├── plots.py           # matplotlib charts
 │       ├── routes.py          # /, /upload, /analyses, /analyses/<id>[/status], /sample
-│       ├── static/            # Coral theme CSS, textures, product captures
+│       ├── static/            # Coral theme CSS, charts.js, vendor/Chart.js, captures
 │       └── templates/
 ├── tests/                  # pytest (unit, route, golden-file)
 ├── finops_artifacts/       # models from an offline training run
@@ -175,6 +181,28 @@ Sign-up creates a user and a new organisation with that user as owner. Others
 sign up first and are then added by email under **Members**. Someone in several
 organisations switches between them from the organisation name in the top bar.
 An organisation always keeps at least one owner.
+
+## JSON API
+
+All under `/api/v1`, signed in (the browser session), scoped to your current
+organisation. Responses are `{"success": true|false, "data": ..., "error": ...}`,
+plus `"meta"` with paging on lists.
+
+| Method | Path | Returns |
+|---|---|---|
+| GET | `/analyses` | your organisation's analyses, newest first |
+| GET | `/analyses/<id>` | status, totals, period, counts by status and confidence, waste by service |
+| GET | `/analyses/<id>/series` | daily spend, forecast with its band, forecast after fixes |
+| GET | `/analyses/<id>/findings` | findings; `service`, `region`, `account`, `confidence`, `status` (or `active`), `q`, `sort` (`waste`, `monthly`, `cost`, `name`), `page`, `per_page` (25/50/100) |
+| GET | `/findings/<id>` | one finding with signal explanations, recommended action and history |
+| POST | `/findings/<id>/status` | JSON `{"status", "note", "snoozed_until"}`; analyst or above; needs `X-CSRFToken` |
+
+## Phase 4a changes
+
+- **Overview and Findings tabs** for each analysis. The overview shows totals, a triage strip (count and waste per status), the biggest open findings, the spend and forecast chart and waste by service. The findings tab filters, searches, sorts and pages, and exports the filtered list as CSV.
+- **Finding detail page:** the reasons, what each signal means, a recommended action, a status form and the history.
+- **Finding workflow:** Open, Acknowledged, Fixed, Snoozed (until a date) or False positive, with a note. Decisions carry over to the next upload of the same resources; a resource marked fixed that is still there gets reopened.
+- **Charts in the browser** with Chart.js (vendored, no CDN) from the JSON API; the numbers are also in tables. matplotlib is no longer a dependency of the web app.
 
 ## Phase 3 changes
 
