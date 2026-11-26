@@ -109,7 +109,9 @@
       3.304823,
       3.304823
     ],
-    "backtest_mae": 0.933271
+    "backtest_mae": 0.933271,
+    "backtest_mape": 45.175421,
+    "fallback_reason": null
   },
   "total_waste": 0.0,
   "waste_percentage": 0.0,

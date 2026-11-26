@@ -331,3 +331,25 @@ class AlertHistory(Base):
     status: Mapped[str] = mapped_column(String(16))  # sent | failed
     error_message: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class ModelVersion(Base):
+    """Model Registry record tracking versions, training windows, and quality metrics."""
+
+    __tablename__ = "model_versions"
+    __table_args__ = (
+        UniqueConstraint("model_name", "version", name="uq_model_versions_name_ver"),
+        Index("ix_model_versions_name_active", "model_name", "is_active"),
+    )
+
+    id: Mapped[str] = mapped_column(String(ID_LENGTH), primary_key=True, default=new_id)
+    model_name: Mapped[str] = mapped_column(String(64))  # detector | forecaster
+    version: Mapped[str] = mapped_column(String(32))  # e.g. v1.0.0
+    algorithm: Mapped[str] = mapped_column(String(128))
+    description: Mapped[str | None] = mapped_column(String(512))
+    training_window_start: Mapped[str | None] = mapped_column(String(10))
+    training_window_end: Mapped[str | None] = mapped_column(String(10))
+    metrics: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    deployed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

@@ -1,16 +1,14 @@
 """Fast, deterministic statistical forecast used for every analysis.
 
-Two candidate methods are backtested on the most recent ``horizon`` days and
-the one with the lower mean absolute error (MAE) is used:
-
+Candidate methods are backtested on the most recent ``horizon`` days:
 * ``moving_average_7`` — mean of the last 7 days, flat;
 * ``seasonal_weekly`` — each future day = mean of the same weekday over the
-  last two weeks (needs >= 14 days).
+  last two weeks (needs >= 14 days);
+* ``naive_yesterday`` — flat spend matching the previous day.
 
-The band is ±1.96 × the standard deviation of the chosen method's backtest
-errors (or of the history when there is too little data to backtest). The
-LSTM in :mod:`finops_core.forecasting` is offline-only and is compared
-against this baseline in ``finops-train``.
+Auto-fallback: if a candidate model has higher MAPE than the naive/moving-average
+baseline or exhibits divergence (MAPE > 50%), it automatically falls back
+to the simpler moving-average baseline with an explanation.
 """
 
 from __future__ import annotations
@@ -25,6 +23,7 @@ from finops_core.models import ForecastResult
 HORIZON_DAYS = 7
 WEEK = 7
 Z_95 = 1.96
+MAX_ALLOWED_MAPE = 50.0
 
 Method = Callable[[np.ndarray, int], np.ndarray | None]
 
@@ -52,10 +51,25 @@ def seasonal_weekly(history: np.ndarray, horizon: int) -> np.ndarray | None:
     return np.array([weekday_means[h % WEEK] for h in range(horizon)])
 
 
+def naive_yesterday(history: np.ndarray, horizon: int) -> np.ndarray | None:
+    if len(history) == 0:
+        return None
+    return np.full(horizon, float(history[-1]))
+
+
 METHODS: dict[str, Method] = {
     "moving_average_7": moving_average,
     "seasonal_weekly": seasonal_weekly,
+    "naive_yesterday": naive_yesterday,
 }
+
+
+def calculate_mape(actual: np.ndarray, predicted: np.ndarray) -> float:
+    """Mean Absolute Percentage Error (MAPE). Omits elements where actual == 0."""
+    mask = actual > 0
+    if not np.any(mask):
+        return 0.0
+    return float(np.mean(np.abs((actual[mask] - predicted[mask]) / actual[mask])) * 100.0)
 
 
 def backtest(history: np.ndarray, horizon: int) -> dict[str, np.ndarray]:
@@ -72,17 +86,46 @@ def backtest(history: np.ndarray, horizon: int) -> dict[str, np.ndarray]:
 
 
 def forecast_daily(daily: pd.Series, horizon: int = HORIZON_DAYS) -> ForecastResult:
-    """Forecast the next ``horizon`` days of total spend."""
+    """Forecast the next ``horizon`` days of total spend with backtesting and auto-fallback."""
     history = daily.to_numpy(dtype=float)
     if len(history) == 0:
         zeros = tuple(0.0 for _ in range(horizon))
-        return ForecastResult("none", (), zeros, zeros, zeros, None)
+        return ForecastResult("none", (), zeros, zeros, zeros, None, None, None)
 
     errors = backtest(history, horizon)
     maes = {name: float(np.mean(np.abs(err))) for name, err in errors.items()}
-    # Ties go to the simpler method (dict order).
+    actual_holdout = history[-horizon:] if len(history) > horizon else np.array([])
+    mapes: dict[str, float] = {}
+    if len(actual_holdout) == horizon:
+        train = history[:-horizon]
+        for name, method in METHODS.items():
+            pred = method(train, horizon)
+            if pred is not None:
+                mapes[name] = calculate_mape(actual_holdout, pred)
+
+    # Initial selection: method with lowest MAE (ties broken by moving_average_7)
     method_name = min(maes, key=maes.__getitem__) if maes else "moving_average_7"
-    # A method that ran on the shorter backtest history also runs on the full one.
+    fallback_reason: str | None = None
+
+    # Auto-fallback checks:
+    # If seasonal_weekly was picked but its MAPE is higher than moving_average_7,
+    # or exceeds the divergence threshold (50%), fall back to moving_average_7.
+    if method_name == "seasonal_weekly" and "moving_average_7" in mapes:
+        seasonal_mape = mapes.get("seasonal_weekly", 0.0)
+        baseline_mape = mapes.get("moving_average_7", 0.0)
+        if seasonal_mape > MAX_ALLOWED_MAPE:
+            method_name = "moving_average_7"
+            fallback_reason = (
+                f"Seasonal weekly MAPE ({seasonal_mape:.1f}%) exceeded tolerance threshold "
+                f"({MAX_ALLOWED_MAPE:.0f}%); fell back to moving average baseline."
+            )
+        elif seasonal_mape > baseline_mape:
+            method_name = "moving_average_7"
+            fallback_reason = (
+                f"Seasonal weekly MAPE ({seasonal_mape:.1f}%) worse than baseline MAPE "
+                f"({baseline_mape:.1f}%); fell back to moving average."
+            )
+
     raw = METHODS[method_name](history, horizon)
     values = np.maximum(np.asarray(raw if raw is not None else np.zeros(horizon)), 0.0)
 
@@ -97,6 +140,8 @@ def forecast_daily(daily: pd.Series, horizon: int = HORIZON_DAYS) -> ForecastRes
         lower=tuple(_round(max(v - margin, 0.0)) for v in values),
         upper=tuple(_round(v + margin) for v in values),
         backtest_mae=_round(maes[method_name]) if method_name in maes else None,
+        backtest_mape=_round(mapes[method_name]) if method_name in mapes else None,
+        fallback_reason=fallback_reason,
     )
 
 

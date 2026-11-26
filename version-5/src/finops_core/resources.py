@@ -27,6 +27,7 @@ import numpy as np
 import pandas as pd
 
 from finops_core.models import SIGNAL_IDLE, SIGNAL_ML_OUTLIER, SIGNAL_OVERPRICED, Finding
+from finops_core.rules import detect_rule_signals
 
 OVERPRICE_RATIO = 3.0
 OUTLIER_Z = 3.5  # Iglewicz & Hoaglin's recommended modified z-score cut-off
@@ -158,6 +159,13 @@ def _evaluate(row: Mapping[Hashable, Any], ml_score: float | None, months: float
     if idle:
         signals.append(SIGNAL_IDLE)
         reasons.append(f"Billed ${cost:,.2f} over {row['days_active']} day(s) with zero usage")
+
+    rule_results = detect_rule_signals(row)
+    has_rules = len(rule_results) > 0
+    for r_sig, r_rsn in rule_results:
+        signals.append(r_sig)
+        reasons.append(r_rsn)
+
     if overpriced:
         signals.append(SIGNAL_OVERPRICED)
         reasons.append(
@@ -170,7 +178,7 @@ def _evaluate(row: Mapping[Hashable, Any], ml_score: float | None, months: float
     if not signals:
         return None
 
-    if idle:
+    if idle or has_rules:
         waste = cost
     elif has_peers:
         waste = max(cost - usage * float(row["peer_median"]), 0.0)
@@ -192,14 +200,14 @@ def _evaluate(row: Mapping[Hashable, Any], ml_score: float | None, months: float
         days_active=int(row["days_active"]),
         estimated_waste=round(waste, 6),
         estimated_monthly_waste=round(waste / months, 6),
-        confidence=_confidence(idle, overpriced, ml_score is not None),
+        confidence=_confidence(idle, overpriced, ml_score is not None, has_rules),
         signals=tuple(signals),
         reasons=tuple(reasons),
     )
 
 
-def _confidence(idle: bool, overpriced: bool, ml_flagged: bool) -> str:
-    if idle or (overpriced and ml_flagged):
+def _confidence(idle: bool, overpriced: bool, ml_flagged: bool, has_rules: bool = False) -> str:
+    if has_rules or idle or (overpriced and ml_flagged):
         return "High"
     if overpriced:
         return "Medium"

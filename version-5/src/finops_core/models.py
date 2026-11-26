@@ -15,6 +15,19 @@ CONFIDENCE_LEVELS = ("High", "Medium", "Low")
 SIGNAL_IDLE = "idle"
 SIGNAL_OVERPRICED = "overpriced"
 SIGNAL_ML_OUTLIER = "ml_outlier"
+SIGNAL_UNATTACHED_EBS = "unattached_ebs"
+SIGNAL_IDLE_ELB = "idle_elb"
+SIGNAL_STOPPED_INSTANCE = "stopped_instance"
+SIGNAL_OLD_SNAPSHOT = "old_snapshot"
+SIGNAL_IDLE_IP = "idle_ip"
+
+RULE_SIGNALS = (
+    SIGNAL_UNATTACHED_EBS,
+    SIGNAL_IDLE_ELB,
+    SIGNAL_STOPPED_INSTANCE,
+    SIGNAL_OLD_SNAPSHOT,
+    SIGNAL_IDLE_IP,
+)
 
 
 @dataclass(frozen=True)
@@ -57,6 +70,8 @@ class ForecastResult:
     lower: tuple[float, ...]
     upper: tuple[float, ...]
     backtest_mae: float | None
+    backtest_mape: float | None = None
+    fallback_reason: str | None = None
 
     @property
     def total(self) -> float:

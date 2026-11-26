@@ -341,7 +341,9 @@
       16.869993,
       16.869993
     ],
-    "backtest_mae": 3.316555
+    "backtest_mae": 3.316555,
+    "backtest_mape": 29.295171,
+    "fallback_reason": null
   },
   "total_waste": 27.181738,
   "waste_percentage": 11.674378,

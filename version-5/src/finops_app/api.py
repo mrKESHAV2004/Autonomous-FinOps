@@ -334,3 +334,58 @@ def save_alert_api() -> tuple[Response, int]:
     return ok(
         {"id": cfg.id, "channel_type": cfg.channel_type, "destination": cfg.destination}, status=201
     )
+
+
+@bp.get("/model-quality/precision")
+@role_required("viewer")
+def model_quality_precision() -> tuple[Response, int]:
+    from finops_app.model_quality import compute_quality_scorecard
+
+    session = get_session()
+    scorecard = compute_quality_scorecard(session, current_org_id())
+    return ok(scorecard)
+
+
+@bp.get("/models")
+@role_required("viewer")
+def list_models_api() -> tuple[Response, int]:
+    from finops_app.model_registry import list_versions
+
+    session = get_session()
+    models = list_versions(session)
+    data = [
+        {
+            "id": m.id,
+            "model_name": m.model_name,
+            "version": m.version,
+            "algorithm": m.algorithm,
+            "is_active": m.is_active,
+            "metrics": m.metrics,
+            "created_at": m.created_at.isoformat(),
+            "deployed_at": m.deployed_at.isoformat() if m.deployed_at else None,
+        }
+        for m in models
+    ]
+    return ok(data)
+
+
+@bp.post("/models/<name>/rollback")
+@role_required("admin")
+def rollback_model_api(name: str) -> tuple[Response, int]:
+    from finops_app.model_registry import RegistryError, rollback_version
+
+    session = get_session()
+    try:
+        prev = rollback_version(session, name)
+        repo.audit(session, current_org_id(), "model.rollback", "model_version", prev.id)
+        session.commit()
+        return ok(
+            {
+                "model_name": prev.model_name,
+                "version": prev.version,
+                "is_active": prev.is_active,
+                "deployed_at": prev.deployed_at.isoformat() if prev.deployed_at else None,
+            }
+        )
+    except RegistryError as exc:
+        return fail(str(exc), 400)

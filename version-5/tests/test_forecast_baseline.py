@@ -60,7 +60,7 @@ def test_picks_seasonal_for_weekly_pattern() -> None:
 def test_picks_moving_average_for_flat_noise() -> None:
     rng = np.random.default_rng(0)
     fc = forecast_daily(series(list(100 + rng.normal(0, 1, 28))))
-    assert fc.method in {"moving_average_7", "seasonal_weekly"}
+    assert fc.method in {"moving_average_7", "seasonal_weekly", "naive_yesterday"}
     assert all(lo <= v <= hi for lo, v, hi in zip(fc.lower, fc.values, fc.upper, strict=True))
 
 
@@ -84,5 +84,38 @@ def test_empty_history() -> None:
 
 
 def test_backtest_skips_methods_that_cannot_run() -> None:
-    assert set(backtest(np.ones(10), 7)) == {"moving_average_7"}
+    assert set(backtest(np.ones(10), 7)) == {"moving_average_7", "naive_yesterday"}
     assert backtest(np.ones(7), 7) == {}
+
+
+def test_naive_yesterday() -> None:
+    from finops_core.forecast_baseline import naive_yesterday
+
+    out = naive_yesterday(np.array([10.0, 20.0, 30.0]), 4)
+    assert out is not None
+    assert out.tolist() == [30.0, 30.0, 30.0, 30.0]
+
+
+def test_calculate_mape() -> None:
+    from finops_core.forecast_baseline import calculate_mape
+
+    actual = np.array([100.0, 200.0, 300.0])
+    pred = np.array([110.0, 180.0, 300.0])
+    # abs errors: 10/100 = 10%, 20/200 = 10%, 0/300 = 0% -> mean 6.6667%
+    mape = calculate_mape(actual, pred)
+    assert mape == pytest.approx(6.666667, rel=1e-4)
+
+    # Empty / zero actual
+    assert calculate_mape(np.zeros(3), np.ones(3)) == 0.0
+
+
+def test_auto_fallback_when_seasonal_diverges() -> None:
+    # History with high volatility where seasonal error spikes
+    history = [10.0, 20.0, 30.0, 10.0, 20.0, 30.0, 10.0] * 3
+    # Perturb the holdout so seasonal pattern breaks down heavily
+    history[-7:] = [100.0, 2.0, 95.0, 1.0, 120.0, 0.5, 80.0]
+    fc = forecast_daily(series(history))
+    assert fc.method == "moving_average_7"
+    assert fc.backtest_mape is not None
+    if fc.fallback_reason:
+        assert "fell back to moving average" in fc.fallback_reason

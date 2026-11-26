@@ -199,11 +199,13 @@ Each phase ends in something runnable. Sizing assumes one developer.
 
 **Result:** 309 tests pass, 92% coverage, 0 lints, strict mypy type safety, 0 bandit security issues. Validated Terraform IaC for AWS ECS Fargate + RDS Postgres + Redis + S3.
 
-### Phase 7 — Model quality loop (ongoing)
-- [ ] Labelled evaluation set from Phase 4 feedback (false positive / fixed); track precision@k of findings.
-- [ ] Forecast backtesting (MAPE vs. naive baseline) per tenant; auto-fallback to the baseline when the model is worse.
-- [ ] Model registry: version, training window, metrics; roll back on regression.
-- [ ] Rule-based detectors next to ML for known zombie patterns (unattached EBS volumes, idle load balancers, stopped-but-billed instances, old snapshots) — high precision and easy to explain.
+### Phase 7 — Model quality loop (ongoing) — ✅ done 2026-11-26
+- [x] Labelled evaluation set from Phase 4 feedback (false positive / fixed); track precision@k of findings (`finops_core/evaluation.py`, `finops_app/model_quality.py`, `finops-eval` CLI, and `/api/v1/model-quality/precision`).
+- [x] Forecast backtesting (MAPE vs. naive baseline) per tenant; auto-fallback to the baseline when the model is worse or diverges (`finops_core/forecast_baseline.py`).
+- [x] Model registry: version, training window, metrics; roll back on regression (`finops_app/models.py`, `0006_model_registry.py` migration, `finops_app/model_registry.py`, `finops-models` CLI, and `/api/v1/models` API endpoints).
+- [x] Rule-based detectors next to ML for known zombie patterns (unattached EBS volumes, idle load balancers, stopped-but-billed instances, old snapshots, idle Elastic IPs) — high precision and easy to explain (`finops_core/rules.py` and `finops_core/resources.py`).
+
+**Result:** 329 tests pass, 0 lints, strict mypy type safety, 0 bandit security issues. Automated feedback-to-eval loop and safe fallback protections.
 
 ### Phase 8 — Commercialisation (once there are users)
 - [ ] Plans: Free (manual upload, 1 account), Pro (connectors, alerts), Team (SSO, roles). Stripe billing.

@@ -219,6 +219,24 @@ plus `"meta"` with paging on lists.
 - **First run:** an empty history and the upload page offer **Analyse the sample**; `/sample` downloads the same file (30 days, 24 resources, FOCUS column names).
 - **Accessibility:** a skip link; text contrast checked at WCAG AA on every app page in both themes.
 
+## Phase 7 changes (Model quality loop & rule detectors)
+
+- **Rule-Based Zombie Detectors:** Deterministic, highly-explainable rules in `finops_core.rules` identifying:
+  - *Unattached EBS Volumes* (`SIGNAL_UNATTACHED_EBS`): provisioned storage volume with zero active I/O.
+  - *Idle Elastic Load Balancers* (`SIGNAL_IDLE_ELB`): provisioned load balancers receiving no network traffic.
+  - *Stopped Compute Instances* (`SIGNAL_STOPPED_INSTANCE`): stopped or halted VMs incurring continued EBS/IP charges.
+  - *Aged Storage Snapshots* (`SIGNAL_OLD_SNAPSHOT`): unattached backup snapshots retained beyond 90 days.
+  - *Idle Elastic IPs* (`SIGNAL_IDLE_IP`): allocated public IP addresses unattached to running instances.
+  Rule findings are assigned High confidence and automatically explain root cause and remediation actions in the UI and API.
+- **Forecast Backtesting & Auto-Fallback:**
+  - `calculate_mape` backtests candidate models (`seasonal_weekly`, `moving_average_7`, `naive_yesterday`) against historical holdouts.
+  - Compares against `naive_yesterday` baseline and automatically falls back if candidate MAPE exceeds 50% or underperforms baseline.
+- **Model Quality Evaluation & Precision@k:**
+  - `finops-eval` CLI and `/api/v1/model-quality/precision` endpoint track Precision@k, ranking quality, confusion metrics, and waste realization against ground-truth user triage feedback (`fixed`/`acknowledged` vs `false_positive`).
+- **Model Registry & Safe Rollback:**
+  - `ModelVersion` database table with Alembic migration `0006_model_registry.py`.
+  - `finops-models` CLI and `/api/v1/models` API endpoints supporting registration, active model tracking, promotion, and instant rollbacks to prior model versions.
+
 ## Phase 6 changes (Production deployment & operations)
 
 - **Production WSGI Server:** Gunicorn (`gunicorn>=22.0`) running 4 workers and 2 threads with non-blocking async IO and standard access/error logging.

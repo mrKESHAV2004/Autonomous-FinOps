@@ -57,6 +57,8 @@ finops-worker = "finops_app.cli:worker_main"
 finops-cleanup = "finops_app.cli:cleanup_main"
 finops-users = "finops_app.users_cli:users_main"
 finops-sync = "finops_app.cli:sync_main"
+finops-eval = "finops_app.model_quality:eval_main"
+finops-models = "finops_app.model_registry:models_cli_main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/finops_core", "src/finops_app"]
