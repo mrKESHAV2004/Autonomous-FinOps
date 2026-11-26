@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import logging
 
-from flask import Flask, flash, redirect, request
-from werkzeug.exceptions import RequestEntityTooLarge
+from flask import Flask, flash, redirect, render_template, request
+from flask_wtf.csrf import CSRFError
+from werkzeug.exceptions import HTTPException, RequestEntityTooLarge
 from werkzeug.wrappers import Response
 
 from finops_app.config import Config
@@ -37,9 +38,13 @@ def create_app(config: Config | None = None) -> Flask:
 
     _init_services(app, cfg)
 
+    from finops_app import auth, members, security
     from finops_app.routes import bp
 
+    security.init_app(app, cfg)
+    auth.init_app(app, cfg)
     app.register_blueprint(bp)
+    app.register_blueprint(members.bp)
     _register_error_handlers(app, cfg)
     logger.info("App created", extra={"env": cfg.env, "max_upload_mb": cfg.max_upload_mb})
     return app
@@ -68,8 +73,35 @@ def _init_services(app: Flask, cfg: Config) -> None:
     app.extensions["finops_queue"] = queue
 
 
+ERROR_MESSAGES = {
+    400: ("Something in that request wasn't right", "Go back and try again."),
+    403: (
+        "You don't have access to this",
+        "Ask an owner or admin of your organisation for access.",
+    ),
+    404: ("Not found", "This page doesn't exist, or it belongs to another organisation."),
+    405: ("Not allowed", "That action isn't available here."),
+    429: ("Too many requests", "Please wait a minute, then try again."),
+}
+
+
 def _register_error_handlers(app: Flask, cfg: Config) -> None:
     @app.errorhandler(RequestEntityTooLarge)
     def too_large(_exc: RequestEntityTooLarge) -> Response:
         flash(f"File is too large. The limit is {cfg.max_upload_mb} MB.", "danger")
         return redirect(request.url)
+
+    @app.errorhandler(CSRFError)
+    def csrf_failed(_exc: CSRFError) -> tuple[str, int]:
+        return _error_page(400, "This form has expired", "Reload the page and try again.")
+
+    @app.errorhandler(HTTPException)
+    def http_error(exc: HTTPException) -> tuple[str, int] | HTTPException:
+        code = exc.code or 500
+        if code not in ERROR_MESSAGES:
+            return exc
+        return _error_page(code, *ERROR_MESSAGES[code])
+
+
+def _error_page(code: int, title: str, detail: str) -> tuple[str, int]:
+    return render_template("error.html", code=code, title=title, detail=detail), code

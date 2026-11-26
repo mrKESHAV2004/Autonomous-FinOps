@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% include "_app_head.html" %}
+    <title>Members · {{ active_org.org_name }}</title>
+    <meta name="description" content="People who can see this organisation's billing analyses, and their roles.">
+</head>
+<body>
+{% set active = 'members' %}
+{% include "_app_topbar.html" %}
+    <main class="container">
+        <section class="page-head" aria-labelledby="page-title">
+            <div>
+                <h1 id="page-title">Members</h1>
+                <p class="lead">Who can see {{ active_org.org_name }}’s analyses.</p>
+            </div>
+        </section>
+
+        <section class="block" aria-label="Current members">
+            <div class="sheet stock">
+                <table class="ledger ledger--members">
+                    <thead>
+                        <tr><th scope="col">Member</th><th scope="col">Role</th><th scope="col">Joined (UTC)</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr>
+                    </thead>
+                    <tbody>
+                        {% for m in members %}
+                        <tr>
+                            <th scope="row">{{ m.user.name or m.user.email }}{% if m.id == actor.id %} <span class="tag">You</span>{% endif %}{% if m.user.name %}<span class="sub">{{ m.user.email }}</span>{% endif %}</th>
+                            <td>
+                                {% if m.id != actor.id and can_manage(actor.role, m.role) %}
+                                <form method="post" action="{{ url_for('members.change_role', membership_id=m.id) }}" class="inline">
+                                    {{ confirm_form.csrf_token }}
+                                    <label class="visually-hidden" for="role-{{ m.id }}">Role for {{ m.user.email }}</label>
+                                    <select name="role" id="role-{{ m.id }}">
+                                        {% for r in roles %}<option value="{{ r }}"{% if r == m.role %} selected{% endif %}>{{ r | capitalize }}</option>{% endfor %}
+                                    </select>
+                                    <button type="submit" class="link">Save</button>
+                                </form>
+                                {% else %}{{ m.role | capitalize }}{% endif %}
+                            </td>
+                            <td>{{ m.created_at.strftime("%Y-%m-%d") }}</td>
+                            <td class="num">
+                                {% if m.id != actor.id and can_manage(actor.role, m.role) %}
+                                <form method="post" action="{{ url_for('members.remove', membership_id=m.id) }}" class="inline">
+                                    {{ confirm_form.csrf_token }}
+                                    <button type="submit" class="link link--danger">Remove<span class="visually-hidden"> {{ m.user.email }}</span></button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="block" aria-labelledby="add-title">
+            <div class="block__head"><h2 id="add-title">Add a member</h2></div>
+            <p class="block__note">They need an account first: ask them to sign up, then add them by email.</p>
+            {% set form = add_form %}{% include "_form_errors.html" %}
+            <form method="post" action="{{ url_for('members.add') }}" class="fields fields--row">
+                {{ add_form.csrf_token }}
+                <label>Email {{ add_form.email(autocomplete="off", required=True) }}</label>
+                <label>Role {{ add_form.role() }}</label>
+                <button type="submit" class="btn btn--ink">Add member</button>
+            </form>
+            <dl class="glossary roles-key">
+                <div><dt>Viewer</dt><dd>Sees analyses and history.</dd></div>
+                <div><dt>Analyst</dt><dd>Also uploads billing files.</dd></div>
+                <div><dt>Admin</dt><dd>Also adds and removes analysts and viewers.</dd></div>
+                <div><dt>Owner</dt><dd>Everything, including admins and other owners.</dd></div>
+            </dl>
+        </section>
+    </main>
+</body>
+</html>

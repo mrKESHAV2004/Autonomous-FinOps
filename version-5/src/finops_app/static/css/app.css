@@ -179,3 +179,52 @@ code { font-family: var(--font-outlier); font-size: 0.875em; }
   .btn, .drop { transition: box-shadow var(--dur-short) linear; }
   .btn:hover, .btn:active, .drop:hover, .drop.is-over { transform: none; }
 }
+
+/* Accounts */
+.account { display: grid; justify-items: center; padding-block: var(--space-3xl); }
+.account__card { width: min(100%, 30rem); padding: var(--space-xl); }
+.account__card .lead { margin-top: var(--space-sm); color: var(--color-ink-2); }
+.account__switch { margin-top: var(--space-lg); color: var(--color-ink-2); }
+.account__switch a, .flash a { color: var(--color-print); text-decoration-color: var(--color-accent-2); }
+.fields { display: grid; gap: var(--space-md); margin-top: var(--space-lg); }
+.fields label { display: grid; gap: var(--space-2xs); font-weight: 500; color: var(--color-ink); }
+.fields input, .fields select, .inline select { min-height: 40px; padding: 0 var(--space-sm); border: var(--rule-hair) solid var(--color-rule-2); border-radius: var(--radius-input); background: var(--color-paper); color: var(--color-ink); font: 400 var(--text-md) var(--font-body); }
+.fields input:focus-visible, .fields select:focus-visible, .inline select:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 1px; border-color: var(--color-print); }
+.fields .btn { justify-self: start; margin-top: var(--space-xs); }
+.fields--row { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto; align-items: end; max-width: 52rem; }
+.fields--row .btn { margin-top: 0; }
+.hint, .optional { color: var(--color-muted); font-size: var(--text-sm); font-weight: 400; }
+.notice p + p { margin-top: var(--space-2xs); }
+.flashes { padding-top: var(--space-md); }
+.flash { padding: var(--space-sm) var(--space-md); border-left: 3px solid var(--color-accent-2); background: var(--color-paper-2); color: var(--color-ink); }
+.page-gap { margin-block: var(--space-3xl); }
+
+/* Topbar account controls */
+.topbar__org { color: var(--color-muted); font-size: var(--text-sm); }
+.topbar__signout button, .orgs summary, .orgs__menu button, .link { border: 0; padding: 0; background: none; color: var(--color-ink-2); font: 500 var(--text-md) var(--font-body); cursor: pointer; }
+.topbar__signout button:hover, .link:hover { color: var(--color-ink); text-decoration: underline; text-decoration-color: var(--color-accent-2); text-underline-offset: 0.3em; }
+.topbar__signout button:focus-visible, .orgs summary:focus-visible, .orgs__menu button:focus-visible, .link:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 4px; }
+.orgs { position: relative; }
+.orgs summary { list-style: none; color: var(--color-muted); font-size: var(--text-sm); }
+.orgs summary::after { content: " ▾"; }
+.orgs__menu { position: absolute; top: calc(100% + var(--space-xs)); left: 0; z-index: var(--z-dropdown); min-width: 16rem; margin: 0; padding: var(--space-xs); list-style: none; background: var(--color-cotton); border-radius: var(--radius-input); box-shadow: var(--edge-stock), var(--cast-stock); }
+.orgs__menu button { display: flex; justify-content: space-between; gap: var(--space-md); width: 100%; padding: var(--space-xs) var(--space-sm); text-align: left; color: var(--color-print); }
+.orgs__menu button span { color: var(--color-muted); font-size: var(--text-sm); }
+.orgs__menu button[aria-current="true"] { font-weight: 600; }
+.orgs__menu button:hover { background: var(--color-paper-2); }
+
+/* Members */
+.ledger--members .sub { display: block; color: var(--color-muted); font-weight: 400; }
+.inline { display: inline-flex; align-items: center; gap: var(--space-sm); }
+.link--danger { color: var(--color-error); }
+.roles-key { margin-top: var(--space-xl); }
+
+@media (max-width: 60rem) {
+  .fields--row { grid-template-columns: minmax(0, 1fr); }
+  .topbar__nav { gap: var(--space-md); flex-wrap: wrap; justify-content: flex-end; }
+}
+@media (max-width: 40rem) {
+  .topbar__inner { flex-wrap: wrap; row-gap: var(--space-xs); padding-block: var(--space-sm); }
+  .topbar__nav { width: 100%; justify-content: flex-start; gap: var(--space-xs) var(--space-md); }
+  .topbar__nav .btn { margin-left: auto; }
+}

@@ -1,4 +1,8 @@
-"""HTTP routes: landing, upload, analysis status and results, history, sample CSV."""
+"""HTTP routes: landing, upload, analysis status and results, history, sample CSV.
+
+Everything but the landing page and the sample CSV needs sign-in; data is
+always read for :func:`~finops_app.auth.current_org_id`.
+"""
 
 from __future__ import annotations
 
@@ -18,15 +22,18 @@ from flask import (
     request,
     url_for,
 )
+from flask_login import current_user
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
 from finops_app import analysis as dashboard
 from finops_app import repository as repo
+from finops_app.auth import current_org_id, role_required
 from finops_app.config import Config
 from finops_app.db import get_session
 from finops_app.jobs import JobQueue
 from finops_app.models import Analysis
+from finops_app.security import STATUS_LIMIT, UPLOAD_LIMIT, limiter
 from finops_app.storage import Storage, make_key
 from finops_app.uploads import UploadRejected, check_contents, check_filename
 
@@ -61,20 +68,14 @@ def _queue() -> JobQueue:
     return queue
 
 
-def _org_id() -> str:
-    """The organisation this request acts for (the default org until Phase 3)."""
-    session = get_session()
-    org_id = repo.default_org_id(session)
-    session.commit()
-    return org_id
-
-
 @bp.get("/")
 def home() -> str:
     return render_template("finOps.html")
 
 
 @bp.route("/upload", methods=["GET", "POST"])
+@role_required("analyst")
+@limiter.limit(UPLOAD_LIMIT, methods=["POST"])
 def index() -> str | Response:
     if request.method == "GET":
         return render_template("index.html")
@@ -102,7 +103,7 @@ def _accept_upload(file: FileStorage) -> str:
         file.save(tmp_path)
         check = check_contents(tmp_path, _config().max_rows)
         session = get_session()
-        org_id = _org_id()
+        org_id = current_org_id()
         key = make_key(org_id)
         _storage().put_file(key, tmp_path)
         analysis = repo.create_upload(
@@ -112,6 +113,7 @@ def _accept_upload(file: FileStorage) -> str:
             storage_key=key,
             size_bytes=check.size_bytes,
             row_count=check.row_count,
+            uploaded_by=current_user.id,
         )
         session.commit()
     finally:
@@ -122,13 +124,14 @@ def _accept_upload(file: FileStorage) -> str:
 
 
 def _analysis_or_404(analysis_id: str) -> Analysis:
-    found = repo.get_analysis(get_session(), _org_id(), analysis_id)
+    found = repo.get_analysis(get_session(), current_org_id(), analysis_id)
     if found is None:
         abort(404)
     return found
 
 
 @bp.get("/analyses/<analysis_id>")
+@role_required("viewer")
 def show_analysis(analysis_id: str) -> str:
     found = _analysis_or_404(analysis_id)
     if found.status == "succeeded":
@@ -138,6 +141,8 @@ def show_analysis(analysis_id: str) -> str:
 
 
 @bp.get("/analyses/<analysis_id>/status")
+@role_required("viewer")
+@limiter.limit(STATUS_LIMIT)
 def analysis_status(analysis_id: str) -> Response:
     found = _analysis_or_404(analysis_id)
     return jsonify(
@@ -149,8 +154,9 @@ def analysis_status(analysis_id: str) -> Response:
 
 
 @bp.get("/analyses")
+@role_required("viewer")
 def history() -> str:
-    analyses = repo.list_analyses(get_session(), _org_id())
+    analyses = repo.list_analyses(get_session(), current_org_id())
     return render_template("history.html", analyses=analyses)
 
 

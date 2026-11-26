@@ -15,22 +15,15 @@
             <p class="lead">Upload your cloud billing CSV to detect zombie waste, forecast spend, and get AI-powered optimization recommendations.</p>
 
             <form method="post" enctype="multipart/form-data" id="uploadForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="drop stock" id="dropArea">
                     <input type="file" name="file" id="fileInput" accept=".csv" class="drop__file"
-                           aria-describedby="dropHint uploadStatus"
-                           onchange="document.getElementById('uploadForm').requestSubmit()">
+                           aria-describedby="dropHint uploadStatus">
                     <label for="fileInput" class="drop__title">Drop your CSV file here or click to browse</label>
                     <p class="drop__hint" id="dropHint">Supports Azure, AWS, and GCP billing exports</p>
                 </div>
                 <p class="drop__status" id="uploadStatus" role="status" aria-live="polite"></p>
 
-                {% with messages = get_flashed_messages() %}
-                    {% if messages %}
-                        {% for message in messages %}
-                            <p class="notice" role="alert">{{ message }}</p>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
             </form>
         </section>
 
@@ -55,11 +48,12 @@
         </aside>
     </main>
 
-    <script>
+    <script nonce="{{ csp_nonce() }}">
         (function () {
             var form = document.getElementById('uploadForm');
             var area = document.getElementById('dropArea');
             var status = document.getElementById('uploadStatus');
+            document.getElementById('fileInput').addEventListener('change', function () { form.requestSubmit(); });
             form.addEventListener('submit', function () {
                 form.setAttribute('aria-busy', 'true');
                 status.textContent = 'Analyzing your cloud data… This may take a moment.';

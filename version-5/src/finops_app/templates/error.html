@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% include "_app_head.html" %}
+    <title>{{ title }} · FinOps.AI</title>
+    <meta name="robots" content="noindex">
+</head>
+<body>
+{% set active = 'error' %}
+{% include "_app_topbar.html" %}
+    <main class="container">
+        <section class="job stock page-gap" aria-labelledby="page-title">
+            <p class="page-head__meta">Error {{ code }}</p>
+            <h1 id="page-title">{{ title }}</h1>
+            <p class="job__hint">{{ detail }}</p>
+            <p class="job__next"><a href="{{ url_for('web.history') if current_user.is_authenticated else '/' }}" class="btn btn--card">{% if current_user.is_authenticated %}Back to history{% else %}Back to home{% endif %}</a></p>
+        </section>
+    </main>
+</body>
+</html>

@@ -2,8 +2,46 @@
         <div class="container topbar__inner">
             <a class="wordmark" href="/" aria-label="FinOps.AI home">FinOps.AI</a>
             <nav class="topbar__nav" aria-label="App">
+                {% if current_user.is_authenticated and active_org %}
+                {% if memberships | length > 1 %}
+                <details class="orgs">
+                    <summary aria-label="Organisation: {{ active_org.org_name }}. Switch organisation">{{ active_org.org_name }}</summary>
+                    <ul class="orgs__menu">
+                        {% for m in memberships %}
+                        <li>
+                            <form method="post" action="{{ url_for('auth.switch_org') }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="org_id" value="{{ m.org_id }}">
+                                <button type="submit"{% if m.org_id == active_org.org_id %} aria-current="true"{% endif %}>{{ m.org_name }} <span>{{ m.role | capitalize }}</span></button>
+                            </form>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </details>
+                {% else %}
+                <span class="topbar__org">{{ active_org.org_name }}</span>
+                {% endif %}
                 <a href="{{ url_for('web.history') }}"{% if active == 'history' %} aria-current="page"{% endif %}>History</a>
-                {% if active != 'upload' %}<a href="{{ url_for('web.index') }}" class="btn btn--ink">Analyze new dataset</a>{% endif %}
+                {% if can('admin') %}<a href="{{ url_for('members.index') }}"{% if active == 'members' %} aria-current="page"{% endif %}>Members</a>{% endif %}
+                <form method="post" action="{{ url_for('auth.logout') }}" class="topbar__signout">
+                    {{ signout_form.csrf_token }}
+                    <button type="submit">Sign out</button>
+                </form>
+                {% if active != 'upload' and can('analyst') %}<a href="{{ url_for('web.index') }}" class="btn btn--ink">Analyze new dataset</a>{% endif %}
+                {% elif current_user.is_authenticated %}
+                <form method="post" action="{{ url_for('auth.logout') }}" class="topbar__signout">
+                    {{ signout_form.csrf_token }}
+                    <button type="submit">Sign out</button>
+                </form>
+                {% else %}
+                <a href="{{ url_for('auth.login') }}"{% if active == 'login' %} aria-current="page"{% endif %}>Sign in</a>
+                {% if active != 'signup' %}<a href="{{ url_for('auth.signup') }}" class="btn btn--ink">Create account</a>{% endif %}
+                {% endif %}
             </nav>
         </div>
     </header>
+{% with messages = get_flashed_messages() %}{% if messages %}
+    <div class="container flashes" role="status">
+        {% for message in messages %}<p class="flash">{{ message }}</p>{% endfor %}
+    </div>
+{% endif %}{% endwith %}

@@ -7,13 +7,23 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import pytest
+from argon2 import PasswordHasher
 from flask import Flask
 from flask.testing import FlaskClient
 
-from finops_app import create_app
+from finops_app import accounts, create_app
 from finops_app.config import Config
+from web_helpers import signup
 
 FIXTURES = Path(__file__).parent / "fixtures"
+
+
+@pytest.fixture(autouse=True)
+def fast_password_hashing(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Real argon2, with cheap parameters so sign-ups don't dominate test time."""
+    monkeypatch.setattr(
+        accounts, "_hasher", PasswordHasher(time_cost=1, memory_cost=1024, parallelism=1)
+    )
 
 
 @pytest.fixture
@@ -26,6 +36,8 @@ def config(tmp_path: Path) -> Config:
         max_upload_mb=1,
         database_url=f"sqlite:///{tmp_path / 'test.db'}",
         max_rows=10_000,
+        rate_limits=False,
+        csrf=False,
     )
 
 
@@ -35,8 +47,16 @@ def app(config: Config) -> Flask:
 
 
 @pytest.fixture
-def client(app: Flask) -> FlaskClient:
+def anon_client(app: Flask) -> FlaskClient:
     return app.test_client()
+
+
+@pytest.fixture
+def client(app: Flask) -> FlaskClient:
+    """Signed in as the owner of a fresh organisation, "Acme"."""
+    c = app.test_client()
+    signup(c)
+    return c
 
 
 def billing_frame(

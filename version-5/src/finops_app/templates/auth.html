@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% include "_app_head.html" %}
+    <title>{% if mode == 'signup' %}Create an account{% else %}Sign in{% endif %} · FinOps.AI</title>
+    <meta name="description" content="{% if mode == 'signup' %}Create a FinOps.AI account and organisation.{% else %}Sign in to FinOps.AI.{% endif %}">
+</head>
+<body>
+{% set active = mode %}
+{% include "_app_topbar.html" %}
+    <main class="container account">
+        <section class="account__card stock" aria-labelledby="page-title">
+            <h1 id="page-title">{% if mode == 'signup' %}Create an account{% else %}Sign in{% endif %}</h1>
+            <p class="lead">{% if mode == 'signup' %}You’ll be the owner of a new organisation. Billing files you upload are only visible to its members.{% else %}Welcome back. Your analyses are waiting.{% endif %}</p>
+            {% include "_form_errors.html" %}
+            <form method="post" class="fields" novalidate>
+                {{ form.csrf_token }}
+                {% if mode == 'signup' %}
+                <label><span>{{ form.name.label.text }} <span class="optional">(optional)</span></span>
+                    {{ form.name(autocomplete="name") }}</label>
+                {% endif %}
+                <label>{{ form.email.label.text }}
+                    {{ form.email(autocomplete="email", required=True, autofocus=(mode == 'login')) }}</label>
+                <label>{{ form.password.label.text }}
+                    {% if mode == 'signup' %}{{ form.password(autocomplete="new-password", required=True, minlength=12, **{"aria-describedby": "pw-hint"}) }}
+                    <span class="hint" id="pw-hint">At least 12 characters. A short sentence works well.</span>
+                    {% else %}{{ form.password(autocomplete="current-password", required=True) }}{% endif %}</label>
+                {% if mode == 'signup' %}
+                <label>{{ form.org_name.label.text }}
+                    {{ form.org_name(autocomplete="organization", required=True, **{"aria-describedby": "org-hint"}) }}
+                    <span class="hint" id="org-hint">Usually your company or team. You can invite others later.</span></label>
+                {% endif %}
+                <button type="submit" class="btn btn--ink">{% if mode == 'signup' %}Create account{% else %}Sign in{% endif %}</button>
+            </form>
+            <p class="account__switch">{% if mode == 'signup' %}Already have an account? <a href="{{ url_for('auth.login') }}">Sign in</a>{% else %}New here? <a href="{{ url_for('auth.signup') }}">Create an account</a>{% endif %}</p>
+        </section>
+    </main>
+</body>
+</html>

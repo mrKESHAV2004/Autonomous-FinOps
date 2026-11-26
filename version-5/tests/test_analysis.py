@@ -45,24 +45,26 @@ def test_dashboard_lists_findings_with_reasons() -> None:
 
     assert data["zombie_count"] == "1"
     assert data["zombie_waste"] == "$12.50"
-    assert "db-prod" in data["zombies_preview"]
-    assert "Pays 5× peers" in data["zombies_preview"]
-    assert "Compute" in data["waste_distribution"]
+    row = data["findings"][0]
+    assert row["label"] == "db-prod"
+    assert row["why"] == "Pays 5× peers"
+    assert row["est_waste"] == "$12.50"
+    assert data["waste_by_service"][0][0] == "Compute"
     assert set(data["plots"]) == {"main_plot", "zombie_analysis"}
     assert data["analysis_version"].startswith("phase1")
 
 
-def test_dashboard_escapes_resource_text() -> None:
+def test_dashboard_rows_are_plain_text_for_the_template_to_escape() -> None:
     f = finding(resource_name="<script>alert(1)</script>", service="<b>svc</b>")
     data = build_dashboard(result(findings=(f,)))
-    assert "<script>" not in data["zombies_preview"]
-    assert "<b>svc</b>" not in data["waste_distribution"]
+    assert data["findings"][0]["label"] == "<script>alert(1)</script>"
+    assert data["waste_by_service"][0][0] == "<b>svc</b>"
 
 
 def test_empty_findings_render_friendly_messages() -> None:
     data = build_dashboard(result())
-    assert "No wasteful resources detected" in data["zombies_preview"]
-    assert "No category data" in data["waste_distribution"]
+    assert data["findings"] == []
+    assert data["waste_by_service"] == []
     assert set(data["plots"]) == {"main_plot"}
 
 

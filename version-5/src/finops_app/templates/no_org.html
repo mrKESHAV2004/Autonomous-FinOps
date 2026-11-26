@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% include "_app_head.html" %}
+    <title>No organisation · FinOps.AI</title>
+    <meta name="description" content="Your account isn't a member of any organisation.">
+</head>
+<body>
+{% set active = 'no-org' %}
+{% include "_app_topbar.html" %}
+    <main class="container">
+        <section class="job stock page-gap" aria-labelledby="page-title">
+            <h1 id="page-title">You’re not in an organisation</h1>
+            <p class="job__hint">Your account ({{ current_user.email }}) isn’t a member of any organisation, so there’s nothing to show. Ask an owner or admin to add you.</p>
+        </section>
+    </main>
+</body>
+</html>

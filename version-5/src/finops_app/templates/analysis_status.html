@@ -29,7 +29,7 @@
         </section>
     </main>
     {% if analysis.status in ("queued", "running") %}
-    <script>
+    <script nonce="{{ csp_nonce() }}">
         (function () {
             var box = document.querySelector('[data-status-url]');
             var label = document.getElementById('job-state');

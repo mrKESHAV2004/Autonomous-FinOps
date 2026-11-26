@@ -9,6 +9,7 @@ from flask.testing import FlaskClient
 
 from finops_app import create_app, tasks
 from finops_app.config import Config
+from web_helpers import login, signup
 
 
 def _upload(client: FlaskClient, content: bytes, filename: str = "billing.csv") -> str:
@@ -22,8 +23,8 @@ def _upload(client: FlaskClient, content: bytes, filename: str = "billing.csv") 
     return resp.get_data(as_text=True)
 
 
-def test_landing_page(client: FlaskClient) -> None:
-    resp = client.get("/")
+def test_landing_page(anon_client: FlaskClient) -> None:
+    resp = anon_client.get("/")
     assert resp.status_code == 200
     assert "Launch system" in resp.get_data(as_text=True)
 
@@ -34,8 +35,8 @@ def test_upload_page(client: FlaskClient) -> None:
     assert 'id="uploadForm"' in resp.get_data(as_text=True)
 
 
-def test_sample_csv_download(client: FlaskClient) -> None:
-    resp = client.get("/sample")
+def test_sample_csv_download(anon_client: FlaskClient) -> None:
+    resp = anon_client.get("/sample")
     assert resp.status_code == 200
     assert resp.mimetype == "text/csv"
     assert "attachment" in resp.headers["Content-Disposition"]
@@ -150,6 +151,7 @@ def test_results_survive_an_app_restart(
     config: Config, make_billing_csv: Callable[..., Path]
 ) -> None:
     first = create_app(config).test_client()
+    signup(first)
     resp = first.post(
         "/upload",
         data={"file": (io.BytesIO(make_billing_csv(days=5).read_bytes()), "bill.csv")},
@@ -157,7 +159,7 @@ def test_results_survive_an_app_restart(
     )
     url = resp.headers["Location"]
 
-    restarted = create_app(config).test_client()
+    restarted = login(create_app(config).test_client(), "owner@acme.example.com")
     assert "Cloud Waste Analysis Complete" in restarted.get(url).get_data(as_text=True)
 
 
@@ -184,3 +186,22 @@ def test_rejected_upload_is_not_stored(client: FlaskClient, config: Config) -> N
     assert "binary data" in _upload(client, b"\x00\x01\x02,\x03\n")
     assert not [p for p in Path(config.upload_dir).rglob("*.csv")]
     assert "No analyses yet" in client.get("/analyses").get_data(as_text=True)
+
+
+def test_resource_names_are_escaped_on_the_dashboard(
+    client: FlaskClient, make_billing_csv: Callable[..., Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from dataclasses import replace
+
+    real = tasks.analyze
+
+    def with_hostile_name(path: str) -> object:
+        res = real(path)
+        hostile = replace(res.findings[0], resource_name="<script>alert(1)</script>")
+        return replace(res, findings=(hostile, *res.findings[1:]))
+
+    monkeypatch.setattr(tasks, "analyze", with_hostile_name)
+    body = _upload(client, make_billing_csv(days=10, anomaly_rate=0.3).read_bytes())
+
+    assert "<script>alert(1)</script>" not in body
+    assert "&lt;script&gt;alert(1)&lt;/script&gt;" in body

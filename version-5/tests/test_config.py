@@ -118,3 +118,31 @@ def test_production_does_not_auto_migrate() -> None:
 def test_database_url_not_in_repr() -> None:
     cfg = Config(database_url="postgresql://user:hunter2@db/x")
     assert "hunter2" not in repr(cfg)
+
+
+def test_phase3_defaults() -> None:
+    cfg = Config.from_env({})
+    assert cfg.session_hours == 8
+    assert cfg.rate_limits is True
+    assert cfg.csrf is True
+    assert cfg.trusted_proxies == 0
+
+
+def test_phase3_variables_are_read() -> None:
+    cfg = Config.from_env(
+        {"FINOPS_SESSION_HOURS": "2", "FINOPS_RATE_LIMITS": "0", "FINOPS_TRUSTED_PROXIES": "1"}
+    )
+    assert (cfg.session_hours, cfg.rate_limits, cfg.trusted_proxies) == (2, False, 1)
+
+
+def test_production_refuses_to_turn_off_rate_limits() -> None:
+    with pytest.raises(ConfigError, match="RATE_LIMITS"):
+        Config.from_env(
+            {"FINOPS_ENV": "production", "FINOPS_SECRET_KEY": "k", "FINOPS_RATE_LIMITS": "0"}
+        )
+
+
+@pytest.mark.parametrize("value", ["-1", "two"])
+def test_trusted_proxies_must_be_a_whole_number(value: str) -> None:
+    with pytest.raises(ConfigError, match="TRUSTED_PROXIES"):
+        Config.from_env({"FINOPS_TRUSTED_PROXIES": value})

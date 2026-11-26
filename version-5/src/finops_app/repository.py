@@ -1,8 +1,8 @@
 """Data access. Every query over customer data goes through :func:`scoped`.
 
-Phase 2 has no sign-in yet, so requests act for the default organisation
-(:func:`default_org_id`). Phase 3 swaps that for the signed-in user's org;
-nothing else here changes.
+``org_id`` always comes from the signed-in user's active membership (see
+:mod:`finops_app.auth`), never from the request. Users, organisations and
+memberships live in :mod:`finops_app.accounts`.
 """
 
 from __future__ import annotations
@@ -19,6 +19,7 @@ from finops_app.models import (
     Dataset,
     Finding,
     ForecastPoint,
+    Membership,
     Organization,
     utcnow,
 )
@@ -29,7 +30,7 @@ DEFAULT_ORG_SLUG = "default"
 DEFAULT_ORG_NAME = "Default organization"
 HISTORY_LIMIT = 100
 
-T = TypeVar("T", Dataset, Analysis, Finding, ForecastPoint, AuditLog)
+T = TypeVar("T", Dataset, Analysis, Finding, ForecastPoint, AuditLog, Membership)
 
 
 def scoped(model: type[T], org_id: str) -> Select[tuple[T]]:
@@ -40,7 +41,10 @@ def scoped(model: type[T], org_id: str) -> Select[tuple[T]]:
 
 
 def default_org_id(session: Session) -> str:
-    """Id of the single organisation used until accounts arrive (Phase 3)."""
+    """Id of the "default" organisation, which holds data uploaded before accounts.
+
+    Created if missing. ``finops-users create --org default`` gives someone access.
+    """
     org = session.scalars(select(Organization).where(Organization.slug == DEFAULT_ORG_SLUG)).first()
     if org is None:
         org = Organization(slug=DEFAULT_ORG_SLUG, name=DEFAULT_ORG_NAME)
@@ -57,10 +61,12 @@ def create_upload(
     storage_key: str,
     size_bytes: int,
     row_count: int,
+    uploaded_by: str | None = None,
 ) -> Analysis:
     """Record a dataset and a queued analysis of it."""
     dataset = Dataset(
         org_id=org_id,
+        uploaded_by=uploaded_by,
         original_filename=original_filename,
         storage_key=storage_key,
         size_bytes=size_bytes,
@@ -71,7 +77,15 @@ def create_upload(
     analysis = Analysis(org_id=org_id, dataset_id=dataset.id, status="queued")
     session.add(analysis)
     session.flush()
-    audit(session, org_id, "analysis.queued", "analysis", analysis.id, {"dataset": dataset.id})
+    audit(
+        session,
+        org_id,
+        "analysis.queued",
+        "analysis",
+        analysis.id,
+        {"dataset": dataset.id},
+        user_id=uploaded_by,
+    )
     return analysis
 
 
@@ -202,15 +216,19 @@ def datasets_with_raw_before(session: Session, cutoff: datetime) -> list[Dataset
 
 def audit(
     session: Session,
-    org_id: str,
+    org_id: str | None,
     action: str,
     target_type: str,
     target_id: str,
     details: dict[str, Any] | None = None,
+    *,
+    user_id: str | None = None,
 ) -> None:
+    """Append one audit entry; ``org_id`` is None only for account events."""
     session.add(
         AuditLog(
             org_id=org_id,
+            user_id=user_id,
             action=action,
             target_type=target_type,
             target_id=target_id,

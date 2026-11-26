@@ -18,6 +18,9 @@
 | ``FINOPS_MAX_ROWS``      | ``2000000``            | uploads with more data rows are rejected      |
 | ``FINOPS_RETENTION_DAYS``| ``90``                 | raw uploads older than this are deleted       |
 | ``FINOPS_AUTO_MIGRATE``  | ``1`` outside prod     | apply database migrations when the app starts |
+| ``FINOPS_SESSION_HOURS`` | ``8``                  | sign-in ends after this long without activity |
+| ``FINOPS_RATE_LIMITS``   | ``1``                  | ``0`` turns rate limiting off (tests only)    |
+| ``FINOPS_TRUSTED_PROXIES``| ``0``                 | proxies in front of the app (X-Forwarded-For) |
 """
 
 from __future__ import annotations
@@ -34,6 +37,7 @@ DEFAULT_PORT = 5000
 DEFAULT_DATABASE_URL = "sqlite:///finops.db"
 DEFAULT_MAX_ROWS = 2_000_000
 DEFAULT_RETENTION_DAYS = 90
+DEFAULT_SESSION_HOURS = 8
 
 
 class ConfigError(RuntimeError):
@@ -57,6 +61,10 @@ class Config:
     max_rows: int = DEFAULT_MAX_ROWS
     retention_days: int = DEFAULT_RETENTION_DAYS
     auto_migrate: bool = True
+    session_hours: int = DEFAULT_SESSION_HOURS
+    rate_limits: bool = True
+    csrf: bool = True
+    trusted_proxies: int = 0
 
     @property
     def testing(self) -> bool:
@@ -99,7 +107,26 @@ class Config:
             max_rows=_positive_int(env_vars, "FINOPS_MAX_ROWS", DEFAULT_MAX_ROWS),
             retention_days=_positive_int(env_vars, "FINOPS_RETENTION_DAYS", DEFAULT_RETENTION_DAYS),
             auto_migrate=_bool(env_vars.get("FINOPS_AUTO_MIGRATE"), default=not is_prod),
+            session_hours=_positive_int(env_vars, "FINOPS_SESSION_HOURS", DEFAULT_SESSION_HOURS),
+            rate_limits=_rate_limits(env_vars, is_prod),
+            trusted_proxies=_non_negative_int(env_vars, "FINOPS_TRUSTED_PROXIES"),
         )
+
+
+def _rate_limits(env_vars: Mapping[str, str], is_prod: bool) -> bool:
+    enabled = _bool(env_vars.get("FINOPS_RATE_LIMITS"), default=True)
+    if is_prod and not enabled:
+        raise ConfigError("FINOPS_RATE_LIMITS must not be turned off in production")
+    return enabled
+
+
+def _non_negative_int(env_vars: Mapping[str, str], name: str) -> int:
+    raw = env_vars.get(name, "").strip()
+    if not raw:
+        return 0
+    if not raw.isdigit():
+        raise ConfigError(f"{name} must be a whole number, got {raw!r}")
+    return int(raw)
 
 
 def _bool(value: str | None, *, default: bool) -> bool:

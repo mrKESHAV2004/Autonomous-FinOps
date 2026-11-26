@@ -1,0 +1,7 @@
+{% if form.form_errors or form.errors %}
+<div class="notice" role="alert">
+    {% for e in form.form_errors %}<p>{{ e }}</p>{% endfor %}
+    {% for field, errors in form.errors.items() if field != 'csrf_token' and errors is not mapping %}{% for e in errors %}<p>{{ e }}</p>{% endfor %}{% endfor %}
+    {% if form.errors.csrf_token %}<p>This form has expired. Please try again.</p>{% endif %}
+</div>
+{% endif %}

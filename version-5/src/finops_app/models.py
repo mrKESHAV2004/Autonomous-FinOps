@@ -52,9 +52,11 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[str] = mapped_column(String(ID_LENGTH), primary_key=True, default=new_id)
-    email: Mapped[str] = mapped_column(String(320), unique=True)
+    email: Mapped[str] = mapped_column(String(320), unique=True)  # stored lower-case
     name: Mapped[str | None] = mapped_column(String(200))
+    password_hash: Mapped[str | None] = mapped_column(String(255))  # argon2; None = no password
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class Membership(Base):
@@ -66,6 +68,9 @@ class Membership(Base):
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     role: Mapped[str] = mapped_column(String(16))  # owner | admin | analyst | viewer
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    organization: Mapped[Organization] = relationship()
+    user: Mapped[User] = relationship()
 
 
 class Dataset(Base):
@@ -169,11 +174,13 @@ class ForecastPoint(Base):
 
 
 class AuditLog(Base):
+    """Who did what. ``org_id`` is empty only for account events (a failed login)."""
+
     __tablename__ = "audit_log"
     __table_args__ = (Index("ix_audit_org_created", "org_id", "created_at"),)
 
     id: Mapped[str] = mapped_column(String(ID_LENGTH), primary_key=True, default=new_id)
-    org_id: Mapped[str] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"))
+    org_id: Mapped[str | None] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"))
     user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     action: Mapped[str] = mapped_column(String(64))
     target_type: Mapped[str] = mapped_column(String(32))
