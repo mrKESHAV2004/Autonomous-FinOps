@@ -39,7 +39,7 @@ def create_app(config: Config | None = None) -> Flask:
 
     _init_services(app, cfg)
 
-    from finops_app import api, auth, findings_views, members, security  # noqa: F401
+    from finops_app import api, auth, findings_views, members, security, sharing  # noqa: F401
     from finops_app.routes import bp
 
     security.init_app(app, cfg)

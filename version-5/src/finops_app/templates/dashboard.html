@@ -2,11 +2,12 @@
 <html lang="en">
 <head>
 {% include "_app_head.html" %}
-    <title>{{ analysis.dataset.original_filename }} · Overview</title>
+    <title>{{ analysis.dataset.original_filename }} · {% if shared %}Shared report{% else %}Overview{% endif %}</title>
+    {% if shared %}<meta name="robots" content="noindex">{% endif %}
     <meta name="description" content="Wasteful cloud resources found in your billing file, with the reason for each and a 7-day spend forecast.">
 </head>
 <body>
-{% set active = 'dashboard' %}
+{% set active = 'shared' if shared else 'dashboard' %}
 {% include "_app_topbar.html" %}
 
     <main class="container">
@@ -16,7 +17,9 @@
                 <p class="page-head__meta">{{ "{:,}".format(results.total_records) }} records over {{ results.period_days }} days · analysis completed {{ results.analysis_time }}</p>
             </div>
         </section>
-{% set tab = 'overview' %}{% include "_analysis_nav.html" %}
+{% if shared %}
+        <p class="shared-note">Read-only report from {{ org_name }}. This link stops working on {{ share_expires.strftime("%Y-%m-%d") }}.</p>
+{% else %}{% set tab = 'overview' %}{% include "_analysis_nav.html" %}{% endif %}
 
         <section class="summary stock" aria-labelledby="insight-title">
             <h2 id="insight-title">{{ results.insight_headline }}</h2>
@@ -51,11 +54,11 @@
             <ul class="triage">
                 {% for status, label in status_labels.items() %}
                 <li class="triage__item triage__item--{{ status }}">
-                    <a href="{{ url_for('web.findings', analysis_id=analysis.id, status=status) }}">
+                    <{{ "div" if shared else "a" }} class="triage__box"{% if not shared %} href="{{ url_for('web.findings', analysis_id=analysis.id, status=status) }}"{% endif %}>
                         <span class="triage__label">{{ label }}</span>
                         <span class="triage__count">{{ "{:,}".format(summary[status].count) }}</span>
                         <span class="triage__waste">${{ "{:,.2f}".format(summary[status].waste) }}</span>
-                    </a>
+                    </{{ "div" if shared else "a" }}>
                 </li>
                 {% endfor %}
             </ul>
@@ -64,13 +67,13 @@
         <section class="block" aria-labelledby="findings-title">
             <div class="block__head">
                 <h2 id="findings-title">Biggest open findings</h2>
-                {% if active_total %}<p class="block__note"><a class="more" href="{{ url_for('web.findings', analysis_id=analysis.id, status='active') }}">See all {{ "{:,}".format(active_total) }} open and acknowledged</a></p>{% endif %}
+                {% if active_total and not shared %}<p class="block__note"><a class="more" href="{{ url_for('web.findings', analysis_id=analysis.id, status='active') }}">See all {{ "{:,}".format(active_total) }} open and acknowledged</a></p>{% endif %}
             </div>
             <div class="sheet stock">
                 {% if top %}
                 {% set rows = top %}{% include "_findings_table.html" %}
                 {% elif results.findings %}
-                <p class="empty">Every finding has been triaged. <a class="more" href="{{ url_for('web.findings', analysis_id=analysis.id) }}">Review them</a></p>
+                <p class="empty">Every finding has been triaged.{% if not shared %} <a class="more" href="{{ url_for('web.findings', analysis_id=analysis.id) }}">Review them</a>{% endif %}</p>
                 {% else %}
                 <p class="empty">No wasteful resources detected. Your cloud spend appears to be efficient.</p>
                 {% endif %}
@@ -83,7 +86,7 @@
                 <p class="block__note">Forecast uses a {{ results.forecast_method }}. The shaded band is the 95% range.</p>
             </div>
             <figure class="chart stock">
-                <div class="chart__canvas"><canvas id="spend-chart" role="img" aria-label="Daily spend, then the business-as-usual and optimized 7-day forecasts. The same numbers are in the table below." data-series-url="{{ url_for('api.get_series', analysis_id=analysis.id) }}"></canvas></div>
+                <div class="chart__canvas"><canvas id="spend-chart" role="img" aria-label="Daily spend, then the business-as-usual and optimized 7-day forecasts. The same numbers are in the table below." data-series-url="{{ data_url if shared else url_for('api.get_series', analysis_id=analysis.id) }}"></canvas></div>
                 <details class="chart__data">
                     <summary>Show the numbers</summary>
                     <table class="ledger ledger--compact">
@@ -108,12 +111,12 @@
                 </div>
                 {% if results.waste_by_service %}
                 <figure class="chart stock chart--bars">
-                    <div class="chart__canvas chart__canvas--short"><canvas id="service-chart" role="img" aria-label="Estimated waste by service, largest first. The same numbers are in the table below." data-summary-url="{{ url_for('api.get_analysis', analysis_id=analysis.id) }}"></canvas></div>
+                    <div class="chart__canvas chart__canvas--short"><canvas id="service-chart" role="img" aria-label="Estimated waste by service, largest first. The same numbers are in the table below." data-summary-url="{{ data_url if shared else url_for('api.get_analysis', analysis_id=analysis.id) }}"></canvas></div>
                 </figure>
                 <table class="ledger ledger--compact">
                     <tbody>
                         {% for service, waste in results.waste_by_service %}
-                        <tr><th scope="row"><a href="{{ url_for('web.findings', analysis_id=analysis.id, service=service) }}">{{ service }}</a></th><td class="num">{{ waste }}</td></tr>
+                        <tr><th scope="row">{% if shared %}{{ service }}{% else %}<a href="{{ url_for('web.findings', analysis_id=analysis.id, service=service) }}">{{ service }}</a>{% endif %}</th><td class="num">{{ waste }}</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -165,6 +168,41 @@
                 <div><dt>Spend reduction</dt><dd>{{ results.savings_pct_vs_bau }}</dd></div>
             </dl>
         </section>
+
+        {% if share_links is not none and not shared %}
+        <section class="block" aria-labelledby="share-title">
+            <div class="block__head">
+                <h2 id="share-title">Share a read-only report</h2>
+                <p class="block__note">Anyone with the link sees this overview (not the findings tab) without signing in.</p>
+            </div>
+            {% with links = get_flashed_messages(category_filter=["share"]) %}{% if links %}
+            <div class="share-new" role="status">
+                <label for="new-link">New link. Copy it now: it won’t be shown again.</label>
+                <input id="new-link" type="text" readonly value="{{ links[-1] }}">
+            </div>
+            {% endif %}{% endwith %}
+            <form method="post" action="{{ url_for('web.create_share', analysis_id=analysis.id) }}" class="fields fields--row share-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label>Expires after
+                    <select name="days"><option value="7">7 days</option><option value="30">30 days</option></select>
+                </label>
+                <button type="submit" class="btn btn--ink">Create link</button>
+            </form>
+            {% if share_links %}
+            <ul class="share-links">
+                {% for link in share_links %}
+                <li>
+                    <span>Link created {{ link.created_at.strftime("%Y-%m-%d %H:%M") }} UTC, expires {{ link.expires_at.strftime("%Y-%m-%d") }}</span>
+                    <form method="post" action="{{ url_for('web.revoke_share', link_id=link.id) }}" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="link link--danger">Revoke</button>
+                    </form>
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </section>
+        {% endif %}
 
         <section class="block" aria-labelledby="glossary-title">
             <div class="block__head">

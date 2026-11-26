@@ -1,3 +1,4 @@
+    <a class="skip" href="#page-title">Skip to content</a>
     <header class="topbar">
         <div class="container topbar__inner">
             <a class="wordmark" href="/" aria-label="FinOps.AI home">FinOps.AI</a>
@@ -22,26 +23,29 @@
                 <span class="topbar__org">{{ active_org.org_name }}</span>
                 {% endif %}
                 <a href="{{ url_for('web.history') }}"{% if active == 'history' %} aria-current="page"{% endif %}>History</a>
+                <a href="{{ url_for('web.savings_page') }}"{% if active == 'savings' %} aria-current="page"{% endif %}>Savings</a>
                 {% if can('admin') %}<a href="{{ url_for('members.index') }}"{% if active == 'members' %} aria-current="page"{% endif %}>Members</a>{% endif %}
                 <form method="post" action="{{ url_for('auth.logout') }}" class="topbar__signout">
                     {{ signout_form.csrf_token }}
                     <button type="submit">Sign out</button>
                 </form>
+                <button type="button" class="theme-toggle" data-theme-toggle hidden>Dark mode</button>
                 {% if active != 'upload' and can('analyst') %}<a href="{{ url_for('web.index') }}" class="btn btn--ink">Analyze new dataset</a>{% endif %}
                 {% elif current_user.is_authenticated %}
                 <form method="post" action="{{ url_for('auth.logout') }}" class="topbar__signout">
                     {{ signout_form.csrf_token }}
                     <button type="submit">Sign out</button>
                 </form>
-                {% else %}
+                {% elif active != 'shared' %}
                 <a href="{{ url_for('auth.login') }}"{% if active == 'login' %} aria-current="page"{% endif %}>Sign in</a>
+                <button type="button" class="theme-toggle" data-theme-toggle hidden>Dark mode</button>
                 {% if active != 'signup' %}<a href="{{ url_for('auth.signup') }}" class="btn btn--ink">Create account</a>{% endif %}
                 {% endif %}
             </nav>
         </div>
     </header>
-{% with messages = get_flashed_messages() %}{% if messages %}
+{% with messages = get_flashed_messages(with_categories=true) | rejectattr(0, "equalto", "share") | list %}{% if messages %}
     <div class="container flashes" role="status">
-        {% for message in messages %}<p class="flash">{{ message }}</p>{% endfor %}
+        {% for _, message in messages %}<p class="flash">{{ message }}</p>{% endfor %}
     </div>
 {% endif %}{% endwith %}

@@ -23,6 +23,10 @@
                     <p class="drop__hint" id="dropHint">Supports Azure, AWS, and GCP billing exports</p>
                 </div>
                 <p class="drop__status" id="uploadStatus" role="status" aria-live="polite"></p>
+            </form>
+            <form method="post" action="{{ url_for('web.analyse_sample') }}" class="sample-line">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                No file to hand? <button type="submit" class="link">Analyse a sample file</button> or <a href="{{ url_for('web.sample_data') }}" download>download it</a> to see the format.
 
             </form>
         </section>

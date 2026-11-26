@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% include "_app_head.html" %}
+    <title>Savings · {{ active_org.org_name }}</title>
+    <meta name="description" content="Findings marked fixed, and whether later uploads confirm the waste is gone.">
+</head>
+<body>
+{% set active = 'savings' %}
+{% include "_app_topbar.html" %}
+    <main class="container">
+        <section class="page-head" aria-labelledby="page-title">
+            <div>
+                <h1 id="page-title">Savings</h1>
+                <p class="lead">Resources marked fixed, checked against your latest upload{% if s.latest %} ({{ s.latest.dataset.original_filename }}){% endif %}.</p>
+            </div>
+        </section>
+
+        {% if s.rows %}
+        <section class="block" aria-labelledby="totals-title">
+            <h2 id="totals-title" class="visually-hidden">Totals</h2>
+            <dl class="stats">
+                <div><dt>Realised</dt><dd>${{ "{:,.2f}".format(s.monthly(CONFIRMED)) }}<span class="stats__sub">Per month, {{ s.count(CONFIRMED) }} resource{{ "" if s.count(CONFIRMED) == 1 else "s" }} no longer flagged</span></dd></div>
+                <div><dt>Estimated</dt><dd>${{ "{:,.2f}".format(s.monthly()) }}<span class="stats__sub">Per month, everything marked fixed</span></dd></div>
+                <div><dt>Still flagged</dt><dd>{{ s.count(STILL_FLAGGED) }}<span class="stats__sub">Marked fixed, still wasting</span></dd></div>
+                <div><dt>Waiting</dt><dd>{{ s.count(WAITING) }}<span class="stats__sub">Fixed in the latest upload; check after the next</span></dd></div>
+            </dl>
+        </section>
+
+        <section class="block" aria-labelledby="list-title">
+            <div class="block__head"><h2 id="list-title">Fixed resources</h2></div>
+            <div class="sheet stock">
+                <table class="ledger">
+                    <thead><tr><th scope="col">Resource</th><th scope="col">Service</th><th scope="col">Marked fixed in</th><th scope="col" class="num">Est. per month</th><th scope="col">Now</th></tr></thead>
+                    <tbody>
+                        {% for row in s.rows %}{% set f = row.finding %}
+                        <tr>
+                            <th scope="row"><a href="{{ url_for('web.finding_detail', finding_id=f.id) }}">{{ f.resource_name or f.resource_id or f.resource_key }}</a></th>
+                            <td>{{ f.service }}</td>
+                            <td>{{ f.analysis.dataset.original_filename }}</td>
+                            <td class="num">${{ "{:,.2f}".format(f.est_monthly_waste) }}</td>
+                            <td>{% if row.verdict == CONFIRMED %}<span class="status status--fixed">Gone from latest upload</span>{% elif row.verdict == STILL_FLAGGED %}<span class="status status--open">Still flagged</span>{% else %}<span class="status status--snoozed">Waiting for next upload</span>{% endif %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="block__note savings-note">“Realised” means the resource isn’t flagged in your latest upload. If that upload covers different accounts, a resource can drop out without being fixed.</p>
+        </section>
+        {% else %}
+        <section class="summary stock page-gap">
+            <h2>Nothing marked fixed yet</h2>
+            <p class="job__hint">When you fix a wasteful resource, open its finding and mark it Fixed. After your next upload, this page shows whether the waste is gone.</p>
+        </section>
+        {% endif %}
+    </main>
+</body>
+</html>

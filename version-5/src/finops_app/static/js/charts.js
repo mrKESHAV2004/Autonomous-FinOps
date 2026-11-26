@@ -23,6 +23,7 @@
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   var C = window.Chart;
+  function render() {
   C.defaults.font.family = fontFamily('--font-body');
   C.defaults.font.size = 12;
   C.defaults.color = token('--color-muted');
@@ -115,4 +116,12 @@
   if (spend) { spendChart(spend); }
   var service = document.getElementById('service-chart');
   if (service) { serviceChart(service); }
+  }
+
+  render();
+  // Colours come from the theme's tokens, so redraw when it changes.
+  document.addEventListener('themechange', function () {
+    Object.values(C.instances).forEach(function (chart) { chart.destroy(); });
+    render();
+  });
 })();

@@ -47,8 +47,18 @@
             {% else %}
             <div class="summary stock">
                 <h2>No analyses yet</h2>
-                <p class="job__hint">Upload a billing CSV and its results will be kept here.</p>
-                <p class="job__next"><a href="{{ url_for('web.index') }}" class="btn btn--ink">Upload a billing file</a></p>
+                <p class="job__hint">Upload a billing CSV (a FOCUS export from AWS, Azure or GCP) and its results will be kept here. No file to hand? Try the sample: 30 days of 24 made-up resources, a few of them wasteful.</p>
+                {% if can('analyst') %}
+                <div class="job__next first-run">
+                    <a href="{{ url_for('web.index') }}" class="btn btn--ink">Upload a billing file</a>
+                    <form method="post" action="{{ url_for('web.analyse_sample') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn--card">Analyse the sample</button>
+                    </form>
+                </div>
+                {% else %}
+                <p class="job__hint">Ask an analyst in your organisation to upload one.</p>
+                {% endif %}
             </div>
             {% endif %}
         </section>

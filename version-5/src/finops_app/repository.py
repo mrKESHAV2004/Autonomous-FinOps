@@ -22,6 +22,7 @@ from finops_app.models import (
     ForecastPoint,
     Membership,
     Organization,
+    ShareLink,
     utcnow,
 )
 from finops_core.models import AnalysisResult, ForecastResult
@@ -31,7 +32,9 @@ DEFAULT_ORG_SLUG = "default"
 DEFAULT_ORG_NAME = "Default organization"
 HISTORY_LIMIT = 100
 
-T = TypeVar("T", Dataset, Analysis, Finding, ForecastPoint, AuditLog, Membership, FindingEvent)
+T = TypeVar(
+    "T", Dataset, Analysis, Finding, ForecastPoint, AuditLog, Membership, FindingEvent, ShareLink
+)
 
 
 def scoped(model: type[T], org_id: str) -> Select[tuple[T]]:

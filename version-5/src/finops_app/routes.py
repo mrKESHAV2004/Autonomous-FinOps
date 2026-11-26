@@ -6,6 +6,7 @@ always read for :func:`~finops_app.auth.current_org_id`.
 
 from __future__ import annotations
 
+import io
 import logging
 import tempfile
 from pathlib import Path
@@ -23,6 +24,7 @@ from flask import (
     url_for,
 )
 from flask_login import current_user
+from sqlalchemy.orm import Session
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
@@ -31,11 +33,13 @@ from finops_app import finding_queries as fq
 from finops_app import repository as repo
 from finops_app import serializers as ser
 from finops_app import triage
-from finops_app.auth import current_org_id, role_required
+from finops_app.accounts import can
+from finops_app.auth import current_org_id, current_role, role_required
 from finops_app.config import Config
 from finops_app.db import get_session
 from finops_app.jobs import JobQueue
-from finops_app.models import Analysis
+from finops_app.models import Analysis, ShareLink
+from finops_app.sample_data import sample_csv
 from finops_app.security import STATUS_LIMIT, UPLOAD_LIMIT, limiter
 from finops_app.storage import Storage, make_key
 from finops_app.uploads import UploadRejected, check_contents, check_filename
@@ -46,15 +50,6 @@ bp = Blueprint("web", __name__)
 
 INCOMING_DIR = ".incoming"
 OVERVIEW_TOP = 5
-SAMPLE_CSV = """UsageDate,ServiceCategory,EffectiveCost,ConsumedQuantity
-2024-01-01,Compute,125.50,100
-2024-01-01,Storage,45.25,50
-2024-01-02,Compute,130.75,105
-2024-01-02,Storage,46.80,52
-2024-01-03,Compute,28.00,5
-2024-01-03,Storage,48.10,55
-2024-01-04,Database,85.30,20
-2024-01-04,Network,12.40,15"""
 
 
 def _config() -> Config:
@@ -156,7 +151,15 @@ def show_analysis(analysis_id: str) -> str:
         series=ser.series_dict(found),
         active_total=top.total,
         status_labels=triage.STATUS_LABELS,
+        share_links=_share_links(session, found),
     )
+
+
+def _share_links(session: Session, found: Analysis) -> list[ShareLink] | None:
+    """Live share links, for admins (who can manage them) only."""
+    from finops_app.sharing import live_links  # sharing imports this module
+
+    return live_links(session, found.org_id, found.id) if can(current_role(), "admin") else None
 
 
 @bp.get("/analyses/<analysis_id>/status")
@@ -179,10 +182,20 @@ def history() -> str:
     return render_template("history.html", analyses=analyses)
 
 
+@bp.post("/sample")
+@role_required("analyst")
+@limiter.limit(UPLOAD_LIMIT)
+def analyse_sample() -> Response:
+    """First-run shortcut: analyse the sample file without downloading it."""
+    sample = FileStorage(io.BytesIO(sample_csv().encode()), filename="sample-billing.csv")
+    analysis_id = _accept_upload(sample)
+    return redirect(url_for("web.show_analysis", analysis_id=analysis_id))  # type: ignore[return-value]
+
+
 @bp.get("/sample")
 def sample_data() -> Response:
     return Response(
-        SAMPLE_CSV,
+        sample_csv(),
         mimetype="text/csv",
         headers={"Content-Disposition": "attachment; filename=sample_finops_data.csv"},
     )
