@@ -29,7 +29,7 @@ def upgrade() -> None:
         sa.Column("training_window_start", sa.String(length=10), nullable=True),
         sa.Column("training_window_end", sa.String(length=10), nullable=True),
         sa.Column("metrics", sa.JSON(), nullable=False),
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("0")),
+        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("deployed_at", sa.DateTime(timezone=True), nullable=True),
         sa.PrimaryKeyConstraint("id"),
