@@ -20,6 +20,21 @@ def create_app(config: Config | None = None) -> Flask:
     cfg = config or Config.from_env()
     configure_logging(cfg.log_level, json_logs=cfg.log_json)
 
+    if cfg.sentry_dsn:
+        try:
+            import sentry_sdk
+            from sentry_sdk.integrations.flask import FlaskIntegration
+
+            sentry_sdk.init(
+                dsn=cfg.sentry_dsn,
+                environment=cfg.env,
+                integrations=[FlaskIntegration()],
+                traces_sample_rate=0.1 if cfg.env == "production" else 1.0,
+            )
+            logger.info("Sentry initialized")
+        except ImportError:
+            logger.warning("FINOPS_SENTRY_DSN set but sentry_sdk is not installed")
+
     app = Flask(__name__)
     app.config.update(
         SECRET_KEY=cfg.secret_key,
@@ -46,6 +61,7 @@ def create_app(config: Config | None = None) -> Flask:
         budgets_views,
         connectors_views,
         findings_views,
+        health,
         members,
         security,
         sharing,
@@ -55,6 +71,7 @@ def create_app(config: Config | None = None) -> Flask:
     security.init_app(app, cfg)
     auth.init_app(app, cfg)
     app.register_blueprint(bp)
+    app.register_blueprint(health.bp)
     app.register_blueprint(api.bp)
     app.register_blueprint(members.bp)
     app.register_blueprint(connectors_views.bp)
@@ -69,13 +86,13 @@ def _init_services(app: Flask, cfg: Config) -> None:
     """Database, raw-file storage and the job queue, kept on ``app.extensions``."""
     from finops_app import db as dbmod
     from finops_app import jobs
-    from finops_app.storage import LocalStorage
+    from finops_app.storage import build_storage
 
     if cfg.auto_migrate:
         dbmod.upgrade(cfg.database_url)
     database = dbmod.Database(cfg.database_url)
     dbmod.init_app(app, database)
-    storage = LocalStorage(cfg.upload_dir)
+    storage = build_storage(cfg)
     queue: jobs.JobQueue
     if cfg.redis_url:
         queue = jobs.RQQueue(cfg.redis_url)

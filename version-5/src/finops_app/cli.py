@@ -14,7 +14,7 @@ from finops_app.db import Database, upgrade
 from finops_app.jobs import QUEUE_NAME
 from finops_app.logging_config import configure_logging
 from finops_app.models import utcnow
-from finops_app.storage import LocalStorage, Storage
+from finops_app.storage import Storage, build_storage
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +77,7 @@ def cleanup_main(argv: Sequence[str] | None = None) -> int:
 
     db = Database(cfg.database_url)
     try:
-        count = delete_expired_uploads(db, LocalStorage(cfg.upload_dir), days)
+        count = delete_expired_uploads(db, build_storage(cfg), days)
     finally:
         db.dispose()
     logger.info("Retention cleanup finished", extra={"deleted": count, "days": days})
@@ -107,7 +107,7 @@ def sync_main(argv: Sequence[str] | None = None) -> int:
     from finops_app.models import CloudConnection
 
     db = Database(cfg.database_url)
-    storage = LocalStorage(cfg.upload_dir)
+    storage = build_storage(cfg)
     queue: JobQueue = RQQueue(cfg.redis_url) if cfg.redis_url else InlineQueue(db, storage)
 
     try:

@@ -146,3 +146,39 @@ def test_production_refuses_to_turn_off_rate_limits() -> None:
 def test_trusted_proxies_must_be_a_whole_number(value: str) -> None:
     with pytest.raises(ConfigError, match="TRUSTED_PROXIES"):
         Config.from_env({"FINOPS_TRUSTED_PROXIES": value})
+
+
+def test_storage_backend_config_defaults() -> None:
+    cfg = Config.from_env({})
+    assert cfg.storage_backend == "local"
+    assert cfg.s3_bucket is None
+    assert cfg.s3_prefix == ""
+    assert cfg.s3_endpoint_url is None
+    assert cfg.sentry_dsn is None
+
+
+def test_storage_backend_s3_configured() -> None:
+    cfg = Config.from_env(
+        {
+            "FINOPS_STORAGE_BACKEND": "s3",
+            "FINOPS_S3_BUCKET": "my-finops-bucket",
+            "FINOPS_S3_PREFIX": "billing-data",
+            "FINOPS_S3_ENDPOINT_URL": "http://localhost:4566",
+            "FINOPS_SENTRY_DSN": "https://foo@sentry.io/123",
+        }
+    )
+    assert cfg.storage_backend == "s3"
+    assert cfg.s3_bucket == "my-finops-bucket"
+    assert cfg.s3_prefix == "billing-data"
+    assert cfg.s3_endpoint_url == "http://localhost:4566"
+    assert cfg.sentry_dsn == "https://foo@sentry.io/123"
+
+
+def test_storage_backend_s3_requires_bucket() -> None:
+    with pytest.raises(ConfigError, match="FINOPS_S3_BUCKET"):
+        Config.from_env({"FINOPS_STORAGE_BACKEND": "s3"})
+
+
+def test_storage_backend_invalid() -> None:
+    with pytest.raises(ConfigError, match="FINOPS_STORAGE_BACKEND"):
+        Config.from_env({"FINOPS_STORAGE_BACKEND": "gcs"})

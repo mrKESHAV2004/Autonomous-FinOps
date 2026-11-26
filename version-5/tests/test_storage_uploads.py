@@ -52,6 +52,96 @@ def test_keys_cannot_escape_the_root(tmp_path: Path, key: str) -> None:
         LocalStorage(tmp_path).exists(key)
 
 
+def test_s3_storage_put_download_delete(tmp_path: Path) -> None:
+    from unittest.mock import MagicMock
+
+    from botocore.exceptions import ClientError
+
+    from finops_app.storage import S3Storage
+
+    mock_client = MagicMock()
+    store = S3Storage(
+        bucket="test-bucket",
+        prefix="billing-prefix",
+        s3_client=mock_client,
+        cache_dir=tmp_path / "cache",
+    )
+    src = write(tmp_path, b"col1,col2\n10,20\n")
+    key = make_key("org1")
+
+    # Put
+    size = store.put_file(key, src)
+    assert size == 16
+    mock_client.upload_file.assert_called_once_with(
+        str(src), "test-bucket", f"billing-prefix/{key}"
+    )
+
+    # Exists - true
+    mock_client.head_object.return_value = {"ContentLength": 16}
+    assert store.exists(key) is True
+    mock_client.head_object.assert_called_with(Bucket="test-bucket", Key=f"billing-prefix/{key}")
+
+    # Local path returns cached file
+    cached = store.local_path(key)
+    assert cached.exists()
+    assert cached.read_bytes() == b"col1,col2\n10,20\n"
+
+    # Delete
+    assert store.delete(key) is True
+    mock_client.delete_object.assert_called_once_with(
+        Bucket="test-bucket", Key=f"billing-prefix/{key}"
+    )
+    assert not cached.exists()
+
+    # Exists - false
+    mock_client.head_object.side_effect = ClientError(
+        {"Error": {"Code": "404", "Message": "Not Found"}}, "head_object"
+    )
+    assert store.exists(key) is False
+
+    # Download when not in cache
+    mock_client.download_file.side_effect = ClientError(
+        {"Error": {"Code": "NoSuchKey", "Message": "The specified key does not exist."}},
+        "download_file",
+    )
+    with pytest.raises(FileNotFoundError):
+        store.local_path("org1/2026/03/missing.csv")
+
+
+def test_s3_storage_invalid_keys(tmp_path: Path) -> None:
+    from unittest.mock import MagicMock
+
+    from finops_app.storage import S3Storage
+
+    store = S3Storage(bucket="b", s3_client=MagicMock(), cache_dir=tmp_path)
+    with pytest.raises(StorageError):
+        store.exists("../escape.csv")
+
+
+def test_build_storage_factory(tmp_path: Path) -> None:
+    from finops_app.config import Config
+    from finops_app.storage import S3Storage, build_storage
+
+    local_cfg = Config(upload_dir=tmp_path / "uploads", storage_backend="local")
+    local_store = build_storage(local_cfg)
+    assert isinstance(local_store, LocalStorage)
+
+    s3_cfg = Config(
+        upload_dir=tmp_path / "uploads",
+        storage_backend="s3",
+        s3_bucket="my-bucket",
+        s3_prefix="my-prefix",
+    )
+    s3_store = build_storage(s3_cfg)
+    assert isinstance(s3_store, S3Storage)
+    assert s3_store.bucket == "my-bucket"
+    assert s3_store.prefix == "my-prefix"
+
+    invalid_cfg = Config(upload_dir=tmp_path / "uploads", storage_backend="s3", s3_bucket=None)
+    with pytest.raises(StorageError, match="FINOPS_S3_BUCKET is required"):
+        build_storage(invalid_cfg)
+
+
 # ---- upload checks -----------------------------------------------------------
 
 

@@ -60,3 +60,28 @@ jobs:
 
       - name: Tests with coverage
         run: uv run pytest --cov --cov-report=term-missing --cov-fail-under=80
+
+      - name: Verify Docker build
+        run: docker build -t finops-app:ci .
+
+  terraform:
+    name: terraform (fmt, validate)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: version-5/deploy/terraform
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.0"
+
+      - name: Format check
+        run: terraform fmt -check
+
+      - name: Init and validate
+        run: |
+          terraform init -backend=false
+          terraform validate
+

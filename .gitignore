@@ -25,3 +25,10 @@ uploads/
 graphify-out/
 **/graphify-out/
 .hallmark/
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+

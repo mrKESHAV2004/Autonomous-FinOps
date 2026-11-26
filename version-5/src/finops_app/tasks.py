@@ -14,7 +14,7 @@ from finops_app import repository as repo
 from finops_app import triage
 from finops_app.config import Config
 from finops_app.db import Database
-from finops_app.storage import LocalStorage, Storage
+from finops_app.storage import Storage, build_storage
 from finops_core.errors import DataValidationError
 from finops_core.models import AnalysisResult
 from finops_core.pipeline import analyze
@@ -86,7 +86,7 @@ def _run_engine(storage: Storage, storage_key: str, analysis_id: str) -> Analysi
 @lru_cache(maxsize=1)
 def _worker_resources() -> tuple[Database, Storage]:
     cfg = Config.from_env()
-    return Database(cfg.database_url), LocalStorage(cfg.upload_dir)
+    return Database(cfg.database_url), build_storage(cfg)
 
 
 def run_job(org_id: str, analysis_id: str) -> None:

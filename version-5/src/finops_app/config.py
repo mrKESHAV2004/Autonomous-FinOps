@@ -65,6 +65,11 @@ class Config:
     rate_limits: bool = True
     csrf: bool = True
     trusted_proxies: int = 0
+    storage_backend: str = "local"
+    s3_bucket: str | None = None
+    s3_prefix: str = ""
+    s3_endpoint_url: str | None = None
+    sentry_dsn: str | None = None
 
     @property
     def testing(self) -> bool:
@@ -91,6 +96,20 @@ class Config:
         if is_prod and debug:
             raise ConfigError("FINOPS_DEBUG must not be enabled in production")
 
+        storage_backend = env_vars.get("FINOPS_STORAGE_BACKEND", "local").strip().lower()
+        if storage_backend not in ("local", "s3"):
+            raise ConfigError(
+                f"FINOPS_STORAGE_BACKEND must be 'local' or 's3', got {storage_backend!r}"
+            )
+
+        s3_bucket = env_vars.get("FINOPS_S3_BUCKET", "").strip() or None
+        if storage_backend == "s3" and not s3_bucket:
+            raise ConfigError("FINOPS_S3_BUCKET must be set when FINOPS_STORAGE_BACKEND=s3")
+
+        s3_prefix = env_vars.get("FINOPS_S3_PREFIX", "").strip()
+        s3_endpoint_url = env_vars.get("FINOPS_S3_ENDPOINT_URL", "").strip() or None
+        sentry_dsn = env_vars.get("FINOPS_SENTRY_DSN", "").strip() or None
+
         return cls(
             env=env,
             secret_key=secret_key or secrets.token_hex(32),
@@ -110,6 +129,11 @@ class Config:
             session_hours=_positive_int(env_vars, "FINOPS_SESSION_HOURS", DEFAULT_SESSION_HOURS),
             rate_limits=_rate_limits(env_vars, is_prod),
             trusted_proxies=_non_negative_int(env_vars, "FINOPS_TRUSTED_PROXIES"),
+            storage_backend=storage_backend,
+            s3_bucket=s3_bucket,
+            s3_prefix=s3_prefix,
+            s3_endpoint_url=s3_endpoint_url,
+            sentry_dsn=sentry_dsn,
         )
 
 

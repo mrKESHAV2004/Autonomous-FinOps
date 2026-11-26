@@ -4,12 +4,14 @@ Version 5 is the start of turning the prototype into a product.
 See [../PRODUCT_PLAN.md](../PRODUCT_PLAN.md) for the roadmap and
 [../ARCHITECTURE.md](../ARCHITECTURE.md) for diagrams.
 
-**Status:** Phase 5 (data connectors & automation) done. Connect AWS CUR 2.0 / FOCUS
-exports via cross-account read-only IAM role with External ID (no stored secrets),
-run daily automated ingestion via `finops-sync`, set monthly budgets with progress
-tracking on the dashboard, and receive Slack/email alerts when high-confidence
-waste, budget breaches, or spend spikes occur. Phase 4 UX, Phase 3 security/tenancy,
-and Phase 2 background jobs are in place. See [../PRODUCT_PLAN.md](../PRODUCT_PLAN.md).
+**Status:** Phase 6 (production deployment & operations) done. Production-ready
+container builds with multi-stage non-root Dockerfile and Gunicorn WSGI, S3 object
+storage (`S3Storage`), liveness (`/healthz`), readiness (`/readyz` / `/health`),
+metrics (`/metrics`), Sentry observability, and full AWS ECS Fargate + RDS PostgreSQL +
+ElastiCache Redis + S3 Terraform infrastructure in `deploy/terraform/`. Connect AWS
+CUR 2.0 / FOCUS exports via cross-account read-only IAM role with External ID (no
+stored secrets), run daily automated ingestion via `finops-sync`, set monthly budgets
+with progress tracking on the dashboard, and receive Slack/email alerts. See [../PRODUCT_PLAN.md](../PRODUCT_PLAN.md).
 
 ## Layout
 
@@ -19,7 +21,9 @@ version-5/
 ├── uv.lock                 # pinned versions
 ├── .env.example            # all FINOPS_* settings
 ├── alembic.ini             # for `alembic revision --autogenerate` during development
-├── Dockerfile, docker-compose.yml  # local stack: web, worker, PostgreSQL, Redis
+├── Dockerfile, docker-compose.yml  # local stack: gunicorn web, worker, PostgreSQL, Redis
+├── deploy/
+│   └── terraform/          # production AWS ECS Fargate + RDS + Redis + S3 + ALB
 ├── docs/adr/               # architecture decision records
 ├── src/
 │   ├── finops_core/        # analysis engine, no web code
@@ -214,6 +218,25 @@ plus `"meta"` with paging on lists.
 - **Dark theme:** follows the system setting; the **Dark mode** switch in the top bar overrides it for that browser.
 - **First run:** an empty history and the upload page offer **Analyse the sample**; `/sample` downloads the same file (30 days, 24 resources, FOCUS column names).
 - **Accessibility:** a skip link; text contrast checked at WCAG AA on every app page in both themes.
+
+## Phase 6 changes (Production deployment & operations)
+
+- **Production WSGI Server:** Gunicorn (`gunicorn>=22.0`) running 4 workers and 2 threads with non-blocking async IO and standard access/error logging.
+- **Multi-Stage Non-Root Docker Image:** Hardened `Dockerfile` with multi-stage `uv` build, running as unprivileged user `finops:finops` with automated Python-based healthcheck.
+- **S3 Storage Backend:** Configurable object storage (`FINOPS_STORAGE_BACKEND=s3`, `FINOPS_S3_BUCKET`) via `S3Storage` implementing the `Storage` Protocol with local caching and 90-day retention lifecycles.
+- **Health & Readiness Endpoints:**
+  - `GET /healthz`: unauthenticated fast liveness probe for load balancers.
+  - `GET /readyz` / `GET /health`: readiness probe validating database and Redis connectivity (returns 200 or 503).
+  - `GET /metrics`: operational metrics reporting analysis counts, in-flight jobs, and queue depth.
+- **Observability:** Structured JSON logs, optional Sentry integration (`FINOPS_SENTRY_DSN`).
+- **AWS Infrastructure as Code:** Production Terraform definitions in `deploy/terraform/` for AWS ECS Fargate, RDS PostgreSQL (gp3 encrypted with PITR automated backups), ElastiCache Redis, S3 bucket with 90-day lifecycle, Secrets Manager, and Application Load Balancer.
+
+## Phase 5 changes (Data connectors & automated alerts)
+
+- **Cloud Connectors:** AWS CUR 2.0 / FOCUS connector using cross-account STS `AssumeRole` with External ID and CloudFormation 1-click template. Azure Blob & GCP BigQuery stubs.
+- **Scheduled Ingestion:** `finops-sync` CLI and automated background service for continuous billing sync.
+- **Budgets:** Monthly spend targets per account, service, or total organization spend with progress bars on the dashboard and `/budgets` view.
+- **Alerts:** Slack webhook and email notifications for high-confidence findings, budget overruns, and spend spikes.
 
 ## Phase 4a changes
 

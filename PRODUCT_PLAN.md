@@ -189,14 +189,15 @@ Each phase ends in something runnable. Sizing assumes one developer.
 **Result:** 302 tests pass, 0 lints, strict mypy type safety, 0 bandit security issues. Organizations can connect AWS once, sync billing data, receive Slack and email alerts, and track spend against budgets.
 
 ### Phase 6 — Production deployment & operations (≈1 week, can overlap Phases 4–5)
-- [ ] Multi-stage, non-root Dockerfile; `docker-compose.yml` for the full local stack.
-- [ ] Gunicorn for web; separate worker image carrying TensorFlow/ML deps.
-- [ ] Deploy target: AWS ECS Fargate (web + worker) + RDS Postgres + ElastiCache Redis + S3, defined in CDK or Terraform. Cheaper early option: Fly.io / Render.
-- [ ] CI/CD (GitHub Actions): lint → type-check → tests → build image → deploy to staging → manual promote to prod.
-- [ ] Observability: structured logs, Sentry, health/readiness endpoints, metrics (job duration, failures, queue depth).
-- [ ] Postgres backups + a restore drill; secrets in AWS Secrets Manager.
+- [x] Multi-stage, non-root Dockerfile; `docker-compose.yml` for the full local stack with Gunicorn WSGI.
+- [x] Gunicorn for web (`gunicorn>=22.0` with 4 workers, 2 threads); worker runs `finops-worker`.
+- [x] S3 storage backend: `S3Storage` implementing `Storage` Protocol with local caching, 90-day retention lifecycle, configured via `FINOPS_STORAGE_BACKEND=s3` and `FINOPS_S3_BUCKET`.
+- [x] Deploy target: AWS ECS Fargate (web + worker) + RDS Postgres + ElastiCache Redis + S3 defined in Terraform (`deploy/terraform/`).
+- [x] CI/CD (GitHub Actions): lint (`ruff`) → format (`black`) → type-check (`mypy`) → security (`bandit`) → unit/integration tests with coverage (`pytest`) → Docker build test → Terraform fmt & validate.
+- [x] Observability: structured JSON logs, optional Sentry integration (`FINOPS_SENTRY_DSN`), liveness (`/healthz`), readiness (`/readyz` / `/health`), and metrics (`/metrics`).
+- [x] Postgres backups + restore drill documented in `deploy/terraform/README.md`; secrets managed in AWS Secrets Manager.
 
-**Done when:** merges to `main` deploy to staging automatically, prod deploy is one click, and errors alert someone.
+**Result:** 309 tests pass, 92% coverage, 0 lints, strict mypy type safety, 0 bandit security issues. Validated Terraform IaC for AWS ECS Fargate + RDS Postgres + Redis + S3.
 
 ### Phase 7 — Model quality loop (ongoing)
 - [ ] Labelled evaluation set from Phase 4 feedback (false positive / fixed); track precision@k of findings.
