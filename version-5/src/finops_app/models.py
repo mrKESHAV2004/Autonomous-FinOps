@@ -12,6 +12,7 @@ from typing import Any
 
 from sqlalchemy import (
     JSON,
+    Boolean,
     Date,
     DateTime,
     Float,
@@ -74,6 +75,34 @@ class Membership(Base):
     user: Mapped[User] = relationship()
 
 
+class CloudConnection(Base):
+    """External cloud billing connector (AWS CUR 2.0 / FOCUS, Azure, GCP)."""
+
+    __tablename__ = "cloud_connections"
+    __table_args__ = (
+        Index("ix_cloud_connections_org", "org_id"),
+        UniqueConstraint("org_id", "name", name="uq_cloud_connection_org_name"),
+    )
+
+    id: Mapped[str] = mapped_column(String(ID_LENGTH), primary_key=True, default=new_id)
+    org_id: Mapped[str] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"))
+    provider: Mapped[str] = mapped_column(String(32))  # "aws" | "azure" | "gcp"
+    name: Mapped[str] = mapped_column(String(128))
+    role_arn: Mapped[str | None] = mapped_column(String(255))
+    external_id: Mapped[str] = mapped_column(String(64), default=new_id)
+    s3_bucket: Mapped[str | None] = mapped_column(String(255))
+    s3_prefix: Mapped[str | None] = mapped_column(String(512))
+    region: Mapped[str | None] = mapped_column(String(64))  # e.g. "us-east-1"
+    status: Mapped[str] = mapped_column(String(32), default="pending")  # pending | active | error
+    last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_error: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    organization: Mapped[Organization] = relationship()
+    datasets: Mapped[list[Dataset]] = relationship(back_populates="connection")
+
+
 class Dataset(Base):
     """One uploaded billing file. The raw bytes live in object storage."""
 
@@ -83,6 +112,9 @@ class Dataset(Base):
     id: Mapped[str] = mapped_column(String(ID_LENGTH), primary_key=True, default=new_id)
     org_id: Mapped[str] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"))
     uploaded_by: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    connection_id: Mapped[str | None] = mapped_column(
+        ForeignKey("cloud_connections.id", ondelete="SET NULL")
+    )
     original_filename: Mapped[str] = mapped_column(String(255))
     storage_key: Mapped[str] = mapped_column(String(512), unique=True)
     size_bytes: Mapped[int] = mapped_column(Integer)
@@ -90,6 +122,7 @@ class Dataset(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     raw_deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
+    connection: Mapped[CloudConnection | None] = relationship(back_populates="datasets")
     analyses: Mapped[list[Analysis]] = relationship(back_populates="dataset")
 
 
@@ -237,3 +270,64 @@ class ShareLink(Base):
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     analysis: Mapped[Analysis] = relationship()
+
+
+class Budget(Base):
+    """Monthly budget target per scope (total spend, account, service, or tag)."""
+
+    __tablename__ = "budgets"
+    __table_args__ = (
+        Index("ix_budgets_org", "org_id"),
+        UniqueConstraint("org_id", "scope_type", "scope_value", name="uq_budget_org_scope"),
+    )
+
+    id: Mapped[str] = mapped_column(String(ID_LENGTH), primary_key=True, default=new_id)
+    org_id: Mapped[str] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"))
+    scope_type: Mapped[str] = mapped_column(String(32))  # total | account | service | tag
+    scope_value: Mapped[str | None] = mapped_column(String(255))  # None for "total"
+    monthly_amount: Mapped[float] = mapped_column(Float)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    organization: Mapped[Organization] = relationship()
+
+
+class AlertConfig(Base):
+    """Notification channel configuration (Slack webhook or Email) and trigger preferences."""
+
+    __tablename__ = "alert_configs"
+    __table_args__ = (Index("ix_alert_configs_org", "org_id"),)
+
+    id: Mapped[str] = mapped_column(String(ID_LENGTH), primary_key=True, default=new_id)
+    org_id: Mapped[str] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"))
+    channel_type: Mapped[str] = mapped_column(String(32))  # slack | email
+    destination: Mapped[str] = mapped_column(String(512))  # Webhook URL or email address
+    notify_high_confidence: Mapped[bool] = mapped_column(Boolean, default=True)
+    notify_budget_exceeded: Mapped[bool] = mapped_column(Boolean, default=True)
+    notify_spend_spikes: Mapped[bool] = mapped_column(Boolean, default=True)
+    spike_threshold_percent: Mapped[float] = mapped_column(Float, default=20.0)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    organization: Mapped[Organization] = relationship()
+
+
+class AlertHistory(Base):
+    """Log of dispatched alert notifications."""
+
+    __tablename__ = "alert_history"
+    __table_args__ = (Index("ix_alert_history_org_created", "org_id", "created_at"),)
+
+    id: Mapped[str] = mapped_column(String(ID_LENGTH), primary_key=True, default=new_id)
+    org_id: Mapped[str] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"))
+    analysis_id: Mapped[str | None] = mapped_column(ForeignKey("analyses.id", ondelete="SET NULL"))
+    channel_type: Mapped[str] = mapped_column(String(32))  # slack | email
+    event_type: Mapped[str] = mapped_column(
+        String(64)
+    )  # high_confidence | budget_exceeded | spend_spike
+    summary: Mapped[str] = mapped_column(String(512))
+    details: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    status: Mapped[str] = mapped_column(String(16))  # sent | failed
+    error_message: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

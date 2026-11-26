@@ -178,14 +178,15 @@ Each phase ends in something runnable. Sizing assumes one developer.
 
 **Done when:** a new user can sign up, upload, triage findings and see savings without reading docs.
 
-### Phase 5 — Data connectors & automation (≈2–3 weeks)
-- [ ] AWS: read CUR 2.0 / FOCUS export from the customer's S3 bucket via a cross-account read-only IAM role with external ID. No long-lived customer keys stored.
-- [ ] Azure Cost Management FOCUS export; GCP BigQuery billing export later.
-- [ ] Scheduled daily ingestion + analysis per org.
-- [ ] Alerts: email + Slack webhook for new high-confidence findings, forecast over budget, day-over-day spend spikes.
-- [ ] Budgets per account/tag with a forecast-vs-budget view.
+### Phase 5 — Data connectors & automation (≈2–3 weeks) — ✅ done 2026-11-26
+- [x] AWS: read CUR 2.0 / FOCUS export from the customer's S3 bucket via a cross-account read-only IAM role with external ID (`AwsConnector`). CloudFormation template and quick-create URL generator. No long-lived customer keys stored.
+- [x] Azure Cost Management FOCUS export and GCP BigQuery billing export connector architecture and stubs (`AzureConnector`, `GcpConnector`).
+- [x] Scheduled daily ingestion + analysis per org (`finops_app/connectors/sync.py` and `finops-sync` CLI command).
+- [x] Alerts: email + Slack webhook for new high-confidence findings, forecast over budget, day-over-day spend spikes (`finops_app/alerts.py`, wired into worker task on analysis completion).
+- [x] Budgets per account/service/total with a forecast-vs-budget view (`finops_app/budgets.py`, `/budgets` page, and overview progress cards).
+- [x] UI & JSON API: `/connectors`, `/budgets`, and `/alerts` web pages and `/api/v1` REST endpoints.
 
-**Done when:** an org connects AWS once and gets a daily-refreshed dashboard and alerts with no manual uploads.
+**Result:** 302 tests pass, 0 lints, strict mypy type safety, 0 bandit security issues. Organizations can connect AWS once, sync billing data, receive Slack and email alerts, and track spend against budgets.
 
 ### Phase 6 — Production deployment & operations (≈1 week, can overlap Phases 4–5)
 - [ ] Multi-stage, non-root Dockerfile; `docker-compose.yml` for the full local stack.

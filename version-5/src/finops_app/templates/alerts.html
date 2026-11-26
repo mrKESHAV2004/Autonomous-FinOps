@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% include "_app_head.html" %}
+    <title>Alerts · {{ active_org.org_name }}</title>
+    <meta name="description" content="Configure Slack and email alerts for cloud waste, budget breaches, and spend spikes.">
+</head>
+<body>
+{% set active = 'alerts' %}
+{% include "_app_topbar.html" %}
+    <main class="container">
+        <section class="page-head" aria-labelledby="page-title">
+            <div>
+                <h1 id="page-title">Alerts & Notifications</h1>
+                <p class="lead">Receive real-time Slack webhooks and email alerts for high-confidence zombie waste, budget overruns, and daily spend spikes.</p>
+            </div>
+        </section>
+
+        {% if configs %}
+        <section class="block" aria-labelledby="channels-title">
+            <div class="block__head"><h2 id="channels-title">Configured Alert Channels</h2></div>
+            <div class="sheet stock">
+                <table class="ledger">
+                    <thead>
+                        <tr>
+                            <th scope="col">Channel</th>
+                            <th scope="col">Destination</th>
+                            <th scope="col">Active Triggers</th>
+                            <th scope="col">Status</th>
+                            <th scope="col" class="num"><span class="visually-hidden">Actions</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cfg in configs %}
+                        <tr>
+                            <th scope="row">
+                                {% if cfg.channel_type == 'slack' %}
+                                <strong>Slack Webhook</strong>
+                                {% else %}
+                                <strong>Email</strong>
+                                {% endif %}
+                            </th>
+                            <td><code>{{ cfg.destination }}</code></td>
+                            <td>
+                                <ul style="list-style:none; padding-left:0; margin:0; font-size:0.875rem;">
+                                    {% if cfg.notify_high_confidence %}<li>• High-confidence waste</li>{% endif %}
+                                    {% if cfg.notify_budget_exceeded %}<li>• Budget exceeded</li>{% endif %}
+                                    {% if cfg.notify_spend_spikes %}<li>• Spend spikes (&gt; {{ cfg.spike_threshold_percent }}%)</li>{% endif %}
+                                </ul>
+                            </td>
+                            <td>
+                                {% if cfg.is_active %}
+                                <span class="status status--fixed">Active</span>
+                                {% else %}
+                                <span class="status status--snoozed">Disabled</span>
+                                {% endif %}
+                            </td>
+                            <td class="num">
+                                {% if can('admin') %}
+                                <form method="post" action="{{ url_for('alerts.test_channel', config_id=cfg.id) }}" class="inline">
+                                    {{ confirm_form.csrf_token }}
+                                    <button type="submit" class="link">Send Test</button>
+                                </form>
+                                <form method="post" action="{{ url_for('alerts.delete', config_id=cfg.id) }}" class="inline">
+                                    {{ confirm_form.csrf_token }}
+                                    <button type="submit" class="link link--danger" style="margin-left:0.5rem;">Delete</button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        {% endif %}
+
+        {% if history %}
+        <section class="block" aria-labelledby="history-title">
+            <div class="block__head"><h2 id="history-title">Recent Alert History</h2></div>
+            <div class="sheet stock">
+                <table class="ledger">
+                    <thead>
+                        <tr>
+                            <th scope="col">Trigger Event</th>
+                            <th scope="col">Summary</th>
+                            <th scope="col">Channel</th>
+                            <th scope="col">Delivered (UTC)</th>
+                            <th scope="col">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in history %}
+                        <tr>
+                            <th scope="row"><code>{{ item.event_type }}</code></th>
+                            <td>{{ item.summary }}</td>
+                            <td>{{ item.channel_type.upper() }}</td>
+                            <td>{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                {% if item.status == 'sent' %}
+                                <span class="status status--fixed">Delivered</span>
+                                {% else %}
+                                <span class="status status--open">Failed</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        {% endif %}
+
+        {% if can('admin') %}
+        <section class="block" aria-labelledby="add-alert-title">
+            <div class="block__head"><h2 id="add-alert-title">Add Alert Channel</h2></div>
+            <div class="job" style="padding:1.5rem; border-radius:0.5rem;">
+                <form method="post" action="{{ url_for('alerts.save_config') }}" class="flow">
+                    {{ alert_form.csrf_token }}
+
+                    <div style="display:grid; grid-template-columns: 1fr 2fr; gap:1rem;">
+                        <div class="field">
+                            <label for="channel_type">Channel Type</label>
+                            {{ alert_form.channel_type(id="channel_type", class="input") }}
+                        </div>
+                        <div class="field">
+                            <label for="destination">Destination</label>
+                            {{ alert_form.destination(id="destination", class="input", placeholder="https://hooks.slack.com/services/... or team@example.com") }}
+                        </div>
+                    </div>
+
+                    <div class="field" style="margin-top:1rem;">
+                        <label>Notification Triggers</label>
+                        <div style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.25rem;">
+                            <label style="font-weight:normal; display:flex; align-items:center; gap:0.5rem;">
+                                {{ alert_form.notify_high_confidence() }} New high-confidence waste findings
+                            </label>
+                            <label style="font-weight:normal; display:flex; align-items:center; gap:0.5rem;">
+                                {{ alert_form.notify_budget_exceeded() }} Forecast exceeds monthly budget
+                            </label>
+                            <label style="font-weight:normal; display:flex; align-items:center; gap:0.5rem;">
+                                {{ alert_form.notify_spend_spikes() }} Day-over-day spend spikes
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="field" style="max-width:300px; margin-top:0.5rem;">
+                        <label for="spike_threshold_percent">Spend Spike Threshold (%)</label>
+                        {{ alert_form.spike_threshold_percent(id="spike_threshold_percent", class="input") }}
+                    </div>
+
+                    <div style="margin-top:1rem;">
+                        <button type="submit" class="btn btn--ink">Save Alert Channel</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+        {% endif %}
+    </main>
+</body>
+</html>

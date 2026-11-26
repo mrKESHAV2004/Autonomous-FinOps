@@ -24,6 +24,9 @@
                 {% endif %}
                 <a href="{{ url_for('web.history') }}"{% if active == 'history' %} aria-current="page"{% endif %}>History</a>
                 <a href="{{ url_for('web.savings_page') }}"{% if active == 'savings' %} aria-current="page"{% endif %}>Savings</a>
+                <a href="{{ url_for('connectors.index') }}"{% if active == 'connectors' %} aria-current="page"{% endif %}>Connectors</a>
+                <a href="{{ url_for('budgets.index') }}"{% if active == 'budgets' %} aria-current="page"{% endif %}>Budgets</a>
+                <a href="{{ url_for('alerts.index') }}"{% if active == 'alerts' %} aria-current="page"{% endif %}>Alerts</a>
                 {% if can('admin') %}<a href="{{ url_for('members.index') }}"{% if active == 'members' %} aria-current="page"{% endif %}>Members</a>{% endif %}
                 <form method="post" action="{{ url_for('auth.logout') }}" class="topbar__signout">
                     {{ signout_form.csrf_token }}

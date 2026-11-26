@@ -44,6 +44,33 @@
                 <div><dt>Potential savings</dt><dd>{{ results.savings }}<span class="stats__sub">Next 7 days</span></dd></div>
                 <div><dt>Savings %</dt><dd>{{ results.savings_pct_vs_bau }}<span class="stats__sub">Reduction vs BAU</span></dd></div>
             </dl>
+            {% if budget_statuses %}
+            <div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px solid var(--border, #e5e7eb);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+                    <h3 style="font-size:1rem; font-weight:600; margin:0;">Monthly Budgets</h3>
+                    {% if not shared %}<a href="{{ url_for('budgets.index') }}" class="link" style="font-size:0.85rem;">Manage Budgets</a>{% endif %}
+                </div>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:1rem;">
+                    {% for b in budget_statuses %}
+                    <div style="background:var(--bg-code, #f9fafb); padding:0.85rem 1rem; border-radius:0.375rem; border:1px solid var(--border, #e5e7eb);">
+                        <div style="display:flex; justify-content:space-between; font-size:0.875rem; font-weight:500; margin-bottom:0.35rem;">
+                            <span>{{ b.scope_type | capitalize }}{% if b.scope_value %}: {{ b.scope_value }}{% endif %}</span>
+                            <span style="font-weight:600; color:{% if b.is_exceeded %}#ef4444{% else %}#10b981{% endif %};">
+                                {{ b.percent_used }}%
+                            </span>
+                        </div>
+                        <div style="background:var(--border, #e5e7eb); height:6px; border-radius:3px; overflow:hidden; margin-bottom:0.35rem;">
+                            <div style="width:{{ [b.percent_used, 100.0] | min }}%; height:100%; background:{% if b.percent_used > 100 %}#ef4444{% elif b.percent_used > 80 %}#f59e0b{% else %}#10b981{% endif %};"></div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-sub, #6b7280);">
+                            <span>Actual: ${{ "{:,.2f}".format(b.current_spend) }}</span>
+                            <span>Limit: ${{ "{:,.2f}".format(b.monthly_amount) }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
         </section>
 
         <section class="block" aria-labelledby="triage-title">

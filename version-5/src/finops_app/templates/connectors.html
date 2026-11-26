@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% include "_app_head.html" %}
+    <title>Cloud Connectors · {{ active_org.org_name }}</title>
+    <meta name="description" content="Connect AWS CUR 2.0 / FOCUS exports for automated daily billing ingestion.">
+</head>
+<body>
+{% set active = 'connectors' %}
+{% include "_app_topbar.html" %}
+    <main class="container">
+        <section class="page-head" aria-labelledby="page-title">
+            <div>
+                <h1 id="page-title">Cloud Connectors</h1>
+                <p class="lead">Connect your cloud billing exports once. FinOps.AI syncs daily with read-only cross-account access.</p>
+            </div>
+        </section>
+
+        {% if connections %}
+        <section class="block" aria-labelledby="connections-title">
+            <div class="block__head"><h2 id="connections-title">Active Connections</h2></div>
+            <div class="sheet stock">
+                <table class="ledger">
+                    <thead>
+                        <tr>
+                            <th scope="col">Name</th>
+                            <th scope="col">Provider</th>
+                            <th scope="col">Source (Bucket / Prefix)</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Last Synced</th>
+                            <th scope="col" class="num"><span class="visually-hidden">Actions</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for conn in connections %}
+                        <tr>
+                            <th scope="row">
+                                {{ conn.name }}
+                                {% if conn.last_error %}
+                                <div class="sub status--open" style="font-size:0.8rem; margin-top:0.25rem;">{{ conn.last_error }}</div>
+                                {% endif %}
+                            </th>
+                            <td>{{ conn.provider.upper() }}</td>
+                            <td><code>s3://{{ conn.s3_bucket }}/{{ conn.s3_prefix or '' }}</code></td>
+                            <td>
+                                {% if conn.status == 'active' %}
+                                <span class="status status--fixed">Active</span>
+                                {% elif conn.status == 'error' %}
+                                <span class="status status--open">Error</span>
+                                {% else %}
+                                <span class="status status--snoozed">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ conn.last_synced_at.strftime('%Y-%m-%d %H:%M') if conn.last_synced_at else 'Never' }}</td>
+                            <td class="num">
+                                {% if can('analyst') %}
+                                <form method="post" action="{{ url_for('connectors.verify', connection_id=conn.id) }}" class="inline">
+                                    {{ confirm_form.csrf_token }}
+                                    <button type="submit" class="link">Verify</button>
+                                </form>
+                                <form method="post" action="{{ url_for('connectors.sync', connection_id=conn.id) }}" class="inline">
+                                    {{ confirm_form.csrf_token }}
+                                    <button type="submit" class="link" style="margin-left:0.5rem;">Sync Now</button>
+                                </form>
+                                {% endif %}
+                                {% if can('admin') %}
+                                <form method="post" action="{{ url_for('connectors.delete', connection_id=conn.id) }}" class="inline">
+                                    {{ confirm_form.csrf_token }}
+                                    <button type="submit" class="link link--danger" style="margin-left:0.5rem;">Delete</button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        {% endif %}
+
+        {% if can('analyst') %}
+        <section class="block" aria-labelledby="add-aws-title">
+            <div class="block__head"><h2 id="add-aws-title">Connect AWS (CUR 2.0 / FOCUS Export)</h2></div>
+            <div class="job" style="padding:1.5rem; border-radius:0.5rem; margin-bottom:1.5rem;">
+                <p><strong>Step 1: Set up the Read-Only IAM Role</strong></p>
+                <p class="job__hint" style="margin-bottom:0.75rem;">
+                    We never store long-lived credentials. Create an IAM Role in your AWS account granting read-only access to your billing export S3 bucket using this unique external ID:
+                </p>
+                <div style="background:var(--bg-code, #f3f4f6); padding:0.5rem 0.75rem; border-radius:0.25rem; font-family:monospace; margin-bottom:1rem; display:inline-block;">
+                    External ID: <strong>{{ suggested_external_id }}</strong>
+                </div>
+                <details style="margin-bottom:1rem;">
+                    <summary style="cursor:pointer; color:var(--ink, #1f2937); font-weight:500;">View CloudFormation Template</summary>
+                    <pre style="background:var(--bg-code, #f3f4f6); padding:0.75rem; border-radius:0.25rem; font-size:0.85rem; overflow-x:auto; margin-top:0.5rem;">{{ cf_template | tojson(indent=2) }}</pre>
+                </details>
+
+                <p style="margin-top:1.5rem;"><strong>Step 2: Enter AWS Details</strong></p>
+                <form method="post" action="{{ url_for('connectors.add_aws') }}" class="flow" style="margin-top:1rem;">
+                    {{ aws_form.csrf_token }}
+                    <input type="hidden" name="external_id" value="{{ suggested_external_id }}">
+
+                    <div class="field">
+                        <label for="name">Connection Name</label>
+                        {{ aws_form.name(id="name", class="input", placeholder="e.g. Production AWS") }}
+                    </div>
+
+                    <div class="field">
+                        <label for="role_arn">IAM Role ARN</label>
+                        {{ aws_form.role_arn(id="role_arn", class="input", placeholder="arn:aws:iam::123456789012:role/FinOpsReadOnlyRole") }}
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 2fr 1fr; gap:1rem;">
+                        <div class="field">
+                            <label for="s3_bucket">S3 Bucket Name</label>
+                            {{ aws_form.s3_bucket(id="s3_bucket", class="input", placeholder="my-cur-export-bucket") }}
+                        </div>
+                        <div class="field">
+                            <label for="region">AWS Region</label>
+                            {{ aws_form.region(id="region", class="input", placeholder="us-east-1") }}
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="s3_prefix">S3 Prefix (optional)</label>
+                        {{ aws_form.s3_prefix(id="s3_prefix", class="input", placeholder="cur/ or focus/") }}
+                    </div>
+
+                    <div style="margin-top:1rem;">
+                        <button type="submit" class="btn btn--ink">Save Connection</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section class="block" aria-labelledby="other-providers-title">
+            <div class="block__head"><h2 id="other-providers-title">Other Cloud Providers</h2></div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem;">
+                <div class="job" style="padding:1.25rem; border-radius:0.5rem;">
+                    <h3>Microsoft Azure</h3>
+                    <p class="job__hint">Connect Azure Cost Management FOCUS exports stored in Azure Blob Storage.</p>
+                    <span class="tag" style="margin-top:0.5rem; display:inline-block;">In Preview</span>
+                </div>
+                <div class="job" style="padding:1.25rem; border-radius:0.5rem;">
+                    <h3>Google Cloud (GCP)</h3>
+                    <p class="job__hint">Connect GCP BigQuery detailed billing export datasets.</p>
+                    <span class="tag" style="margin-top:0.5rem; display:inline-block;">In Preview</span>
+                </div>
+            </div>
+        </section>
+        {% endif %}
+    </main>
+</body>
+</html>

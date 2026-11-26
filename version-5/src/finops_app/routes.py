@@ -142,6 +142,8 @@ def show_analysis(analysis_id: str) -> str:
     top = fq.list_page(
         session, found.org_id, found.id, fq.FindingQuery(status="active", per_page=OVERVIEW_TOP)
     )
+    from finops_app.budgets import evaluate_budgets
+
     return render_template(
         "dashboard.html",
         results=results,
@@ -152,6 +154,7 @@ def show_analysis(analysis_id: str) -> str:
         active_total=top.total,
         status_labels=triage.STATUS_LABELS,
         share_links=_share_links(session, found),
+        budget_statuses=evaluate_budgets(session, found.org_id, found),
     )
 
 

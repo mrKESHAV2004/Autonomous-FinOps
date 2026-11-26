@@ -83,3 +83,57 @@ def cleanup_main(argv: Sequence[str] | None = None) -> int:
     logger.info("Retention cleanup finished", extra={"deleted": count, "days": days})
     sys.stdout.write(f"Deleted {count} raw upload(s) older than {days} days.\n")
     return 0
+
+
+def sync_main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        prog="finops-sync",
+        description="Ingest latest billing exports from active cloud connections.",
+    )
+    parser.add_argument("--connection-id", help="sync a specific connection id only")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="force download even if last_modified has not changed",
+    )
+    args = parser.parse_args(argv)
+    cfg = Config.from_env()
+    configure_logging(cfg.log_level, json_logs=cfg.log_json)
+
+    from sqlalchemy import select
+
+    from finops_app.connectors.sync import sync_all_active_connections, sync_connection
+    from finops_app.jobs import InlineQueue, JobQueue, RQQueue
+    from finops_app.models import CloudConnection
+
+    db = Database(cfg.database_url)
+    storage = LocalStorage(cfg.upload_dir)
+    queue: JobQueue = RQQueue(cfg.redis_url) if cfg.redis_url else InlineQueue(db, storage)
+
+    try:
+        with db.session() as session:
+            if args.connection_id:
+                conn = session.scalars(
+                    select(CloudConnection).where(CloudConnection.id == args.connection_id)
+                ).first()
+                if not conn:
+                    sys.stderr.write(f"Connection {args.connection_id} not found.\n")
+                    return 1
+                analysis = sync_connection(
+                    session, storage, queue, conn, max_rows=cfg.max_rows, force=args.force
+                )
+                session.commit()
+                if analysis:
+                    sys.stdout.write(f"Synced connection {conn.name} -> analysis {analysis.id}\n")
+                else:
+                    sys.stdout.write(f"Connection {conn.name} is up to date.\n")
+            else:
+                results = sync_all_active_connections(
+                    session, storage, queue, max_rows=cfg.max_rows
+                )
+                session.commit()
+                synced_count = sum(1 for _, a in results if a is not None)
+                sys.stdout.write(f"Synced {synced_count} of {len(results)} active connection(s).\n")
+    finally:
+        db.dispose()
+    return 0

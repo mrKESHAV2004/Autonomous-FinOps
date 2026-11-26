@@ -4,13 +4,12 @@ Version 5 is the start of turning the prototype into a product.
 See [../PRODUCT_PLAN.md](../PRODUCT_PLAN.md) for the roadmap and
 [../ARCHITECTURE.md](../ARCHITECTURE.md) for diagrams.
 
-**Status:** Phase 4 (product UX) done. A savings page checks fixed resources
-against later uploads, admins can share a read-only report link, there is a
-dark theme, and new users can analyse a sample file in one click. Phase 4a: Each analysis has an Overview with charts
-and a Findings table with filters, CSV export, and a page per finding where
-analysts mark it acknowledged, fixed, snoozed or a false positive; decisions
-carry over to the next upload. Accounts, roles and tenant isolation (Phase 3)
-and background jobs (Phase 2) are in place. See the plan for details.
+**Status:** Phase 5 (data connectors & automation) done. Connect AWS CUR 2.0 / FOCUS
+exports via cross-account read-only IAM role with External ID (no stored secrets),
+run daily automated ingestion via `finops-sync`, set monthly budgets with progress
+tracking on the dashboard, and receive Slack/email alerts when high-confidence
+waste, budget breaches, or spend spikes occur. Phase 4 UX, Phase 3 security/tenancy,
+and Phase 2 background jobs are in place. See [../PRODUCT_PLAN.md](../PRODUCT_PLAN.md).
 
 ## Layout
 
@@ -45,9 +44,15 @@ version-5/
 │       ├── storage.py         # raw uploads under org-prefixed keys
 │       ├── uploads.py         # name, CSV sniff and row-cap checks
 │       ├── jobs.py            # job queue: RQ (Redis), thread, or inline
-│       ├── tasks.py           # the analysis job
-│       ├── cli.py             # finops-db / finops-worker / finops-cleanup
+│       ├── tasks.py           # the analysis job (with alert dispatch)
+│       ├── cli.py             # finops-db / finops-worker / finops-cleanup / finops-sync
 │       ├── users_cli.py       # finops-users
+│       ├── connectors/        # AWS CUR/FOCUS (STS AssumeRole), Azure, GCP, and sync
+│       ├── budgets.py         # monthly budget evaluation per scope
+│       ├── alerts.py          # Slack webhook & email alert dispatch
+│       ├── connectors_views.py# /connectors: add, verify, sync, delete
+│       ├── budgets_views.py   # /budgets: set monthly targets, track spend
+│       ├── alerts_views.py    # /alerts: configure Slack/email & test
 │       ├── accounts.py        # users, orgs, memberships, role rules, argon2
 │       ├── auth.py            # sign-up / sign-in / sign-out, active org, role_required
 │       ├── members.py         # /members: add, change role, remove

@@ -131,3 +131,206 @@ def change_status(finding_id: str) -> tuple[Response, int]:
         return fail(str(exc), 422)
     session.commit()
     return ok(ser.finding_detail_dict(f, triage.events_for(session, f.org_id, f.id)))
+
+
+# --- Connectors API ---
+
+
+@bp.get("/connectors")
+@role_required("viewer")
+def list_connectors() -> tuple[Response, int]:
+    conns = repo.list_connections(get_session(), current_org_id())
+    data = [
+        {
+            "id": c.id,
+            "provider": c.provider,
+            "name": c.name,
+            "role_arn": c.role_arn,
+            "external_id": c.external_id,
+            "s3_bucket": c.s3_bucket,
+            "s3_prefix": c.s3_prefix,
+            "region": c.region,
+            "status": c.status,
+            "last_synced_at": c.last_synced_at.isoformat() if c.last_synced_at else None,
+            "last_error": c.last_error,
+        }
+        for c in conns
+    ]
+    return ok(data)
+
+
+@bp.post("/connectors/aws")
+@role_required("analyst")
+def add_aws_connector() -> tuple[Response, int]:
+    import uuid
+
+    payload = request.get_json(silent=True) or {}
+    name = payload.get("name")
+    role_arn = payload.get("role_arn")
+    s3_bucket = payload.get("s3_bucket")
+    if not name or not role_arn or not s3_bucket:
+        return fail("name, role_arn and s3_bucket are required.", 400)
+
+    session = get_session()
+    org_id = current_org_id()
+    conn = repo.create_connection(
+        session,
+        org_id=org_id,
+        provider="aws",
+        name=name,
+        role_arn=role_arn,
+        external_id=payload.get("external_id") or uuid.uuid4().hex,
+        s3_bucket=s3_bucket,
+        s3_prefix=payload.get("s3_prefix"),
+        region=payload.get("region") or "us-east-1",
+    )
+    repo.audit(session, org_id, "connection.created", "cloud_connection", conn.id)
+    session.commit()
+    return ok({"id": conn.id, "name": conn.name, "status": conn.status}, status=201)
+
+
+@bp.post("/connectors/<connection_id>/verify")
+@role_required("analyst")
+def verify_connector(connection_id: str) -> tuple[Response, int]:
+    from finops_app.connectors.sync import get_connector
+
+    session = get_session()
+    conn = repo.get_connection(session, current_org_id(), connection_id)
+    if not conn:
+        abort(404)
+    res = get_connector(conn).verify()
+    conn.status = "active" if res.success else "error"
+    conn.last_error = None if res.success else res.message
+    repo.audit(session, conn.org_id, "connection.verified", "cloud_connection", conn.id)
+    session.commit()
+    return ok({"success": res.success, "message": res.message, "status": conn.status})
+
+
+# --- Budgets API ---
+
+
+@bp.get("/budgets")
+@role_required("viewer")
+def list_budgets_api() -> tuple[Response, int]:
+    from finops_app.budgets import evaluate_budgets
+
+    session = get_session()
+    org_id = current_org_id()
+    budgets = repo.list_budgets(session, org_id)
+
+    history = repo.list_analyses(session, org_id, limit=1)
+    latest_analysis = history[0] if history else None
+    statuses = evaluate_budgets(session, org_id, latest_analysis) if latest_analysis else []
+    status_by_id = {s.budget_id: s for s in statuses}
+
+    data = [
+        {
+            "id": b.id,
+            "scope_type": b.scope_type,
+            "scope_value": b.scope_value,
+            "monthly_amount": b.monthly_amount,
+            "status": (
+                {
+                    "current_spend": status_by_id[b.id].current_spend,
+                    "projected_spend": status_by_id[b.id].projected_spend,
+                    "percent_used": status_by_id[b.id].percent_used,
+                    "is_exceeded": status_by_id[b.id].is_exceeded,
+                }
+                if b.id in status_by_id
+                else None
+            ),
+        }
+        for b in budgets
+    ]
+    return ok(data)
+
+
+@bp.post("/budgets")
+@role_required("analyst")
+def save_budget_api() -> tuple[Response, int]:
+    payload = request.get_json(silent=True) or {}
+    scope_type = payload.get("scope_type", "total")
+    scope_value = payload.get("scope_value")
+    try:
+        monthly_amount = float(payload.get("monthly_amount", 0))
+    except (TypeError, ValueError):
+        return fail("monthly_amount must be a positive number.", 400)
+    if monthly_amount <= 0:
+        return fail("monthly_amount must be greater than zero.", 400)
+
+    session = get_session()
+    org_id = current_org_id()
+    b = repo.upsert_budget(session, org_id, scope_type, scope_value, monthly_amount)
+    repo.audit(session, org_id, "budget.saved", "budget", b.id)
+    session.commit()
+    return ok(
+        {"id": b.id, "scope_type": b.scope_type, "monthly_amount": b.monthly_amount}, status=201
+    )
+
+
+# --- Alerts API ---
+
+
+@bp.get("/alerts")
+@role_required("viewer")
+def list_alerts_api() -> tuple[Response, int]:
+    session = get_session()
+    org_id = current_org_id()
+    configs = repo.list_alert_configs(session, org_id)
+    history = repo.list_alert_history(session, org_id, limit=20)
+    data = {
+        "configs": [
+            {
+                "id": c.id,
+                "channel_type": c.channel_type,
+                "destination": c.destination,
+                "notify_high_confidence": c.notify_high_confidence,
+                "notify_budget_exceeded": c.notify_budget_exceeded,
+                "notify_spend_spikes": c.notify_spend_spikes,
+                "spike_threshold_percent": c.spike_threshold_percent,
+                "is_active": c.is_active,
+            }
+            for c in configs
+        ],
+        "recent_history": [
+            {
+                "id": h.id,
+                "event_type": h.event_type,
+                "summary": h.summary,
+                "channel_type": h.channel_type,
+                "status": h.status,
+                "created_at": h.created_at.isoformat(),
+            }
+            for h in history
+        ],
+    }
+    return ok(data)
+
+
+@bp.post("/alerts")
+@role_required("admin")
+def save_alert_api() -> tuple[Response, int]:
+    payload = request.get_json(silent=True) or {}
+    channel_type = payload.get("channel_type", "slack")
+    destination = payload.get("destination")
+    if not destination:
+        return fail("destination is required.", 400)
+
+    session = get_session()
+    org_id = current_org_id()
+    cfg = repo.save_alert_config(
+        session,
+        org_id=org_id,
+        channel_type=channel_type,
+        destination=destination,
+        notify_high_confidence=payload.get("notify_high_confidence", True),
+        notify_budget_exceeded=payload.get("notify_budget_exceeded", True),
+        notify_spend_spikes=payload.get("notify_spend_spikes", True),
+        spike_threshold_percent=float(payload.get("spike_threshold_percent", 20.0)),
+        is_active=payload.get("is_active", True),
+    )
+    repo.audit(session, org_id, "alert_config.saved", "alert_config", cfg.id)
+    session.commit()
+    return ok(
+        {"id": cfg.id, "channel_type": cfg.channel_type, "destination": cfg.destination}, status=201
+    )

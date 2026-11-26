@@ -50,6 +50,17 @@ def process_analysis(db: Database, storage: Storage, org_id: str, analysis_id: s
             carried = triage.carry_over(session, analysis)
             if carried:
                 logger.info("Carried over decisions", extra={"analysis": analysis_id, "n": carried})
+            from finops_app.alerts import dispatch_alerts_for_analysis
+
+            try:
+                dispatched = dispatch_alerts_for_analysis(session, org_id, analysis)
+                if dispatched:
+                    logger.info(
+                        "Dispatched alerts",
+                        extra={"analysis": analysis_id, "n": len(dispatched)},
+                    )
+            except Exception:
+                logger.exception("Alert dispatch error", extra={"analysis": analysis_id})
         else:
             repo.mark_failed(session, analysis, outcome)
     logger.info(

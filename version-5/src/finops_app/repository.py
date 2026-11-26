@@ -14,8 +14,12 @@ from sqlalchemy import Select, select
 from sqlalchemy.orm import Session
 
 from finops_app.models import (
+    AlertConfig,
+    AlertHistory,
     Analysis,
     AuditLog,
+    Budget,
+    CloudConnection,
     Dataset,
     Finding,
     FindingEvent,
@@ -33,7 +37,19 @@ DEFAULT_ORG_NAME = "Default organization"
 HISTORY_LIMIT = 100
 
 T = TypeVar(
-    "T", Dataset, Analysis, Finding, ForecastPoint, AuditLog, Membership, FindingEvent, ShareLink
+    "T",
+    AlertConfig,
+    AlertHistory,
+    Analysis,
+    AuditLog,
+    Budget,
+    CloudConnection,
+    Dataset,
+    Finding,
+    FindingEvent,
+    ForecastPoint,
+    Membership,
+    ShareLink,
 )
 
 
@@ -66,11 +82,13 @@ def create_upload(
     size_bytes: int,
     row_count: int,
     uploaded_by: str | None = None,
+    connection_id: str | None = None,
 ) -> Analysis:
     """Record a dataset and a queued analysis of it."""
     dataset = Dataset(
         org_id=org_id,
         uploaded_by=uploaded_by,
+        connection_id=connection_id,
         original_filename=original_filename,
         storage_key=storage_key,
         size_bytes=size_bytes,
@@ -239,3 +257,207 @@ def audit(
             details=details,
         )
     )
+
+
+# --- Phase 5: Cloud Connections ---
+
+
+def list_connections(session: Session, org_id: str) -> list[CloudConnection]:
+    stmt = scoped(CloudConnection, org_id).order_by(CloudConnection.created_at.desc())
+    return list(session.scalars(stmt))
+
+
+def get_connection(session: Session, org_id: str, connection_id: str) -> CloudConnection | None:
+    stmt = scoped(CloudConnection, org_id).where(CloudConnection.id == connection_id)
+    return session.scalars(stmt).first()
+
+
+def all_active_connections(session: Session) -> list[CloudConnection]:
+    """All active cloud connections across all orgs (for background sync runner)."""
+    stmt = select(CloudConnection).where(CloudConnection.status == "active")
+    return list(session.scalars(stmt))
+
+
+def create_connection(
+    session: Session,
+    org_id: str,
+    provider: str,
+    name: str,
+    *,
+    role_arn: str | None = None,
+    external_id: str | None = None,
+    s3_bucket: str | None = None,
+    s3_prefix: str | None = None,
+    region: str | None = None,
+    status: str = "pending",
+) -> CloudConnection:
+    conn = CloudConnection(
+        org_id=org_id,
+        provider=provider,
+        name=name,
+        role_arn=role_arn,
+        s3_bucket=s3_bucket,
+        s3_prefix=s3_prefix,
+        region=region,
+        status=status,
+    )
+    if external_id:
+        conn.external_id = external_id
+    session.add(conn)
+    session.flush()
+    return conn
+
+
+def delete_connection(session: Session, org_id: str, connection_id: str) -> bool:
+    conn = get_connection(session, org_id, connection_id)
+    if conn is None:
+        return False
+    session.delete(conn)
+    session.flush()
+    return True
+
+
+# --- Phase 5: Budgets ---
+
+
+def list_budgets(session: Session, org_id: str) -> list[Budget]:
+    stmt = scoped(Budget, org_id).order_by(Budget.scope_type, Budget.scope_value)
+    return list(session.scalars(stmt))
+
+
+def get_budget(session: Session, org_id: str, budget_id: str) -> Budget | None:
+    stmt = scoped(Budget, org_id).where(Budget.id == budget_id)
+    return session.scalars(stmt).first()
+
+
+def upsert_budget(
+    session: Session,
+    org_id: str,
+    scope_type: str,
+    scope_value: str | None,
+    monthly_amount: float,
+) -> Budget:
+    clean_value = scope_value.strip() if scope_value else None
+    stmt = (
+        scoped(Budget, org_id)
+        .where(Budget.scope_type == scope_type)
+        .where(Budget.scope_value == clean_value)
+    )
+    budget = session.scalars(stmt).first()
+    if budget is None:
+        budget = Budget(
+            org_id=org_id,
+            scope_type=scope_type,
+            scope_value=clean_value,
+            monthly_amount=monthly_amount,
+        )
+        session.add(budget)
+    else:
+        budget.monthly_amount = monthly_amount
+        budget.updated_at = utcnow()
+    session.flush()
+    return budget
+
+
+def delete_budget(session: Session, org_id: str, budget_id: str) -> bool:
+    budget = get_budget(session, org_id, budget_id)
+    if budget is None:
+        return False
+    session.delete(budget)
+    session.flush()
+    return True
+
+
+# --- Phase 5: Alerts ---
+
+
+def list_alert_configs(session: Session, org_id: str) -> list[AlertConfig]:
+    stmt = scoped(AlertConfig, org_id).order_by(AlertConfig.created_at.asc())
+    return list(session.scalars(stmt))
+
+
+def get_alert_config(session: Session, org_id: str, config_id: str) -> AlertConfig | None:
+    stmt = scoped(AlertConfig, org_id).where(AlertConfig.id == config_id)
+    return session.scalars(stmt).first()
+
+
+def save_alert_config(
+    session: Session,
+    org_id: str,
+    channel_type: str,
+    destination: str,
+    *,
+    config_id: str | None = None,
+    notify_high_confidence: bool = True,
+    notify_budget_exceeded: bool = True,
+    notify_spend_spikes: bool = True,
+    spike_threshold_percent: float = 20.0,
+    is_active: bool = True,
+) -> AlertConfig:
+    config: AlertConfig | None = None
+    if config_id:
+        config = get_alert_config(session, org_id, config_id)
+    if config is None:
+        config = AlertConfig(
+            org_id=org_id,
+            channel_type=channel_type,
+            destination=destination.strip(),
+            notify_high_confidence=notify_high_confidence,
+            notify_budget_exceeded=notify_budget_exceeded,
+            notify_spend_spikes=notify_spend_spikes,
+            spike_threshold_percent=spike_threshold_percent,
+            is_active=is_active,
+        )
+        session.add(config)
+    else:
+        config.channel_type = channel_type
+        config.destination = destination.strip()
+        config.notify_high_confidence = notify_high_confidence
+        config.notify_budget_exceeded = notify_budget_exceeded
+        config.notify_spend_spikes = notify_spend_spikes
+        config.spike_threshold_percent = spike_threshold_percent
+        config.is_active = is_active
+        config.updated_at = utcnow()
+    session.flush()
+    return config
+
+
+def delete_alert_config(session: Session, org_id: str, config_id: str) -> bool:
+    config = get_alert_config(session, org_id, config_id)
+    if config is None:
+        return False
+    session.delete(config)
+    session.flush()
+    return True
+
+
+def log_alert(
+    session: Session,
+    org_id: str,
+    channel_type: str,
+    event_type: str,
+    summary: str,
+    *,
+    details: dict[str, Any] | None = None,
+    status: str = "sent",
+    error_message: str | None = None,
+    analysis_id: str | None = None,
+) -> AlertHistory:
+    entry = AlertHistory(
+        org_id=org_id,
+        analysis_id=analysis_id,
+        channel_type=channel_type,
+        event_type=event_type,
+        summary=summary,
+        details=details,
+        status=status,
+        error_message=error_message,
+    )
+    session.add(entry)
+    session.flush()
+    return entry
+
+
+def list_alert_history(session: Session, org_id: str, limit: int = 50) -> list[AlertHistory]:
+    stmt = scoped(AlertHistory, org_id).order_by(AlertHistory.created_at.desc()).limit(limit)
+    return list(session.scalars(stmt))

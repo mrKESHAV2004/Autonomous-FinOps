@@ -39,7 +39,17 @@ def create_app(config: Config | None = None) -> Flask:
 
     _init_services(app, cfg)
 
-    from finops_app import api, auth, findings_views, members, security, sharing  # noqa: F401
+    from finops_app import (  # noqa: F401
+        alerts_views,
+        api,
+        auth,
+        budgets_views,
+        connectors_views,
+        findings_views,
+        members,
+        security,
+        sharing,
+    )
     from finops_app.routes import bp
 
     security.init_app(app, cfg)
@@ -47,6 +57,9 @@ def create_app(config: Config | None = None) -> Flask:
     app.register_blueprint(bp)
     app.register_blueprint(api.bp)
     app.register_blueprint(members.bp)
+    app.register_blueprint(connectors_views.bp)
+    app.register_blueprint(budgets_views.bp)
+    app.register_blueprint(alerts_views.bp)
     _register_error_handlers(app, cfg)
     logger.info("App created", extra={"env": cfg.env, "max_upload_mb": cfg.max_upload_mb})
     return app

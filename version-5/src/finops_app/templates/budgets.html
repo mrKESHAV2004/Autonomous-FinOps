@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% include "_app_head.html" %}
+    <title>Budgets · {{ active_org.org_name }}</title>
+    <meta name="description" content="Set monthly cloud spend budget targets and track actual spend and forecasts against them.">
+</head>
+<body>
+{% set active = 'budgets' %}
+{% include "_app_topbar.html" %}
+    <main class="container">
+        <section class="page-head" aria-labelledby="page-title">
+            <div>
+                <h1 id="page-title">Budgets</h1>
+                <p class="lead">Set monthly targets to track actual and forecasted cloud spend across services and accounts.</p>
+            </div>
+        </section>
+
+        {% if budgets %}
+        <section class="block" aria-labelledby="status-title">
+            <div class="block__head"><h2 id="status-title">Budget Status</h2></div>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:1.25rem;">
+                {% for b in budgets %}
+                {% set s = status_map.get(b.id) %}
+                <div class="job" style="padding:1.25rem; border-radius:0.5rem; position:relative;">
+                    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:0.5rem;">
+                        <span style="font-weight:600; font-size:1.1rem;">
+                            {% if b.scope_type == 'total' %}
+                            Total Monthly Spend
+                            {% elif b.scope_type == 'service' %}
+                            Service: {{ b.scope_value }}
+                            {% elif b.scope_type == 'account' %}
+                            Account: {{ b.scope_value }}
+                            {% else %}
+                            {{ b.scope_type }}: {{ b.scope_value }}
+                            {% endif %}
+                        </span>
+                        {% if s and s.is_exceeded %}
+                        <span class="status status--open">Over Budget</span>
+                        {% else %}
+                        <span class="status status--fixed">On Track</span>
+                        {% endif %}
+                    </div>
+                    <div style="font-size:0.9rem; color:var(--text-sub, #4b5563); margin-bottom:0.5rem;">
+                        Monthly limit: <strong>${{ "{:,.2f}".format(b.monthly_amount) }}</strong>
+                    </div>
+
+                    {% if s %}
+                    <div style="margin:1rem 0 0.5rem 0;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.875rem; margin-bottom:0.25rem;">
+                            <span>Actual: <strong>${{ "{:,.2f}".format(s.current_spend) }}</strong></span>
+                            <span>Limit: <strong>${{ "{:,.2f}".format(b.monthly_amount) }}</strong></span>
+                        </div>
+                        <div style="background:var(--bg-code, #e5e7eb); height:8px; border-radius:4px; overflow:hidden;">
+                            <div style="width: {{ [s.percent_used, 100.0] | min }}%; height:100%; background:{% if s.percent_used > 100 %}#ef4444{% elif s.percent_used > 80 %}#f59e0b{% else %}#10b981{% endif %};"></div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:var(--text-sub, #6b7280); margin-top:0.25rem;">
+                            <span>{{ s.percent_used }}% consumed</span>
+                            <span>Projected: ${{ "{:,.2f}".format(s.projected_spend) }}</span>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="job__hint">Upload billing data to see spend vs this budget target.</p>
+                    {% endif %}
+
+                    {% if can('admin') %}
+                    <div style="margin-top:1rem; text-align:right;">
+                        <form method="post" action="{{ url_for('budgets.delete', budget_id=b.id) }}" class="inline">
+                            {{ confirm_form.csrf_token }}
+                            <button type="submit" class="link link--danger" style="font-size:0.85rem;">Delete Budget</button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        {% if can('analyst') %}
+        <section class="block" aria-labelledby="add-budget-title">
+            <div class="block__head"><h2 id="add-budget-title">Add / Update a Budget</h2></div>
+            <div class="job" style="padding:1.5rem; border-radius:0.5rem;">
+                <form method="post" action="{{ url_for('budgets.save_budget') }}" class="flow">
+                    {{ budget_form.csrf_token }}
+
+                    <div class="field">
+                        <label for="scope_type">Budget Scope</label>
+                        {{ budget_form.scope_type(id="scope_type", class="input") }}
+                    </div>
+
+                    <div class="field">
+                        <label for="scope_value">Scope Value (e.g. <code>AmazonEC2</code> for Service, or AWS Account ID)</label>
+                        {{ budget_form.scope_value(id="scope_value", class="input", placeholder="Leave empty for Total Spend") }}
+                    </div>
+
+                    <div class="field">
+                        <label for="monthly_amount">Monthly Amount ($)</label>
+                        {{ budget_form.monthly_amount(id="monthly_amount", class="input", placeholder="5000.00") }}
+                    </div>
+
+                    <div style="margin-top:1rem;">
+                        <button type="submit" class="btn btn--ink">Save Budget</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+        {% endif %}
+    </main>
+</body>
+</html>
