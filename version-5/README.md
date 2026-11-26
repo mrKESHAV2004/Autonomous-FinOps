@@ -4,9 +4,10 @@ Version 5 is the start of turning the prototype into a product.
 See [../PRODUCT_PLAN.md](../PRODUCT_PLAN.md) for the roadmap and
 [../ARCHITECTURE.md](../ARCHITECTURE.md) for diagrams.
 
-**Status:** Phase 2 (persistence and background jobs) done. Uploads return at
-once, analyses run on a worker, results are stored in a database, and a history
-page lists past analyses. See the plan for details.
+**Status:** Phase 3 (accounts, tenancy and security) done. People sign up into
+their own organisation, roles control who can upload and manage members, and
+one organisation can never see another's data. Uploads return at once, analyses
+run on a worker and results are kept in a database. See the plan for details.
 
 ## Layout
 
@@ -43,6 +44,12 @@ version-5/
 │       ├── jobs.py            # job queue: RQ (Redis), thread, or inline
 │       ├── tasks.py           # the analysis job
 │       ├── cli.py             # finops-db / finops-worker / finops-cleanup
+│       ├── users_cli.py       # finops-users
+│       ├── accounts.py        # users, orgs, memberships, role rules, argon2
+│       ├── auth.py            # sign-up / sign-in / sign-out, active org, role_required
+│       ├── members.py         # /members: add, change role, remove
+│       ├── forms.py           # Flask-WTF forms (CSRF)
+│       ├── security.py        # CSP + headers, CSRF, rate limits
 │       ├── analysis.py        # result → dashboard data
 │       ├── plots.py           # matplotlib charts
 │       ├── routes.py          # /, /upload, /analyses, /analyses/<id>[/status], /sample
@@ -70,17 +77,22 @@ uv sync --extra dev --extra postgres # + the PostgreSQL driver
 uv run finops-web
 ```
 
-Open http://127.0.0.1:5000 and upload a FOCUS billing CSV
-(e.g. `../focus_sample_10000.csv`). The upload returns at once and the page
-updates itself when the analysis is done; past analyses are under **History**.
+Open http://127.0.0.1:5000, create an account (which also creates your
+organisation), and upload a FOCUS billing CSV (e.g. `../focus_sample_10000.csv`).
+The upload returns at once and the page updates itself when the analysis is
+done; past analyses are under **History**, and people under **Members**.
 Settings come from `FINOPS_*` environment variables (see `.env.example`).
 
 With no `FINOPS_REDIS_URL`, the web app stores data in `finops.db` (SQLite),
 applies migrations at start-up and runs analyses on a background thread. Jobs a
 restart interrupts are re-queued when the app starts again.
 
+Without `FINOPS_SECRET_KEY` a random key is used, so a restart signs everyone
+out; set one if that bothers you during development.
+
 In production set `FINOPS_ENV=production`, `FINOPS_SECRET_KEY`,
-`FINOPS_DATABASE_URL` (PostgreSQL) and `FINOPS_REDIS_URL`, apply migrations with
+`FINOPS_DATABASE_URL` (PostgreSQL) and `FINOPS_REDIS_URL` (it also holds the
+rate-limit counters, so every web process shares them), apply migrations with
 `finops-db upgrade`, run at least one `finops-worker`, and serve with a WSGI server:
 
 ```bash
@@ -106,8 +118,13 @@ uv run finops-db upgrade           # apply migrations (FINOPS_DATABASE_URL)
 uv run finops-worker               # process jobs from FINOPS_REDIS_URL
 uv run finops-cleanup              # delete raw uploads older than FINOPS_RETENTION_DAYS (90)
 uv run finops-cleanup --days 30    # override the period
+uv run finops-users create --email you@example.com --org default --role owner
 uv run alembic revision --autogenerate -m "describe the change"   # after changing models.py
 ```
+
+`finops-users create` makes an account (asking for its password) if the email
+is new, and gives it a role in an organisation (by slug). Use it once to reach
+analyses uploaded before Phase 3, which live in the `default` organisation.
 
 Run `finops-cleanup` daily (cron or a scheduler). It deletes only the raw CSVs;
 the results stay. A test fails if `models.py` changes without a new migration.
@@ -145,10 +162,35 @@ uv run bandit -c pyproject.toml -r src
 The same checks run in GitHub Actions (`.github/workflows/ci.yml`).
 Optional git hook, from the repo root: `version-5/.venv/bin/pre-commit install`.
 
+## Accounts and roles
+
+| Role | Can |
+|---|---|
+| Viewer | see analyses and history |
+| Analyst | also upload billing files |
+| Admin | also add, re-role and remove analysts and viewers |
+| Owner | everything, including admins and other owners |
+
+Sign-up creates a user and a new organisation with that user as owner. Others
+sign up first and are then added by email under **Members**. Someone in several
+organisations switches between them from the organisation name in the top bar.
+An organisation always keeps at least one owner.
+
+## Phase 3 changes
+
+- **Sign-in** (Flask-Login): email and password, hashed with argon2. Sessions expire after `FINOPS_SESSION_HOURS` (8) without activity; signing in starts a fresh session; signing out is a POST.
+- **Organisations and roles**: the active organisation lives in the session and is re-checked against the user's memberships on every request, so removal takes effect at once. No route takes an org id from the URL or a form.
+- **CSRF tokens** on every form (Flask-WTF). A POST without a valid token gets a 400.
+- **Rate limits** (Flask-Limiter): login 10/min per IP and 20/hour per email, sign-up 5/hour, upload 20/hour, status checks 120/min, everything else 300/min. Counters live in Redis when `FINOPS_REDIS_URL` is set. Behind a proxy, set `FINOPS_TRUSTED_PROXIES` so limits apply per client, not per proxy.
+- **Security headers** on every response: a Content Security Policy with a per-request script nonce (no inline handlers), `X-Frame-Options`, `nosniff`, a referrer policy, and HSTS in production. Signed-in pages are sent with `Cache-Control: no-store`.
+- **No more `|safe`**: the findings and waste tables are rendered (and escaped) by Jinja from plain data.
+- **Audit log** entries for sign-ins (and failed ones for real accounts), new organisations and every membership change.
+- See `docs/adr/0002-accounts-and-sessions.md`.
+
 ## Phase 2 changes
 
 - **Uploads return immediately** (about 0.1 s): the file is checked (name, that it is UTF-8 CSV text, row cap), stored under an org-prefixed key, and an analysis job is queued. The analysis page polls `/analyses/<id>/status` and shows the dashboard when the job is done, or the reason it failed.
-- **Results are stored** (SQLAlchemy 2, Alembic): datasets, analyses, one row per finding (with a status for the Phase 4 workflow), forecast points and an audit log. Tables for organisations, users and memberships exist; until sign-in arrives in Phase 3 everything belongs to one default organisation.
+- **Results are stored** (SQLAlchemy 2, Alembic): datasets, analyses, one row per finding (with a status for the Phase 4 workflow), forecast points and an audit log. Tables for organisations, users and memberships exist; before Phase 3 everything belonged to one default organisation.
 - **Every query is scoped by organisation** through `repository.scoped()`; tests check one org cannot read another's analyses.
 - **History page** at `/analyses`.
 - **Jobs run on RQ workers** when `FINOPS_REDIS_URL` is set; otherwise on a thread in the web app. See `docs/adr/0001-job-queue.md`.

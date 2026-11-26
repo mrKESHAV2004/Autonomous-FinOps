@@ -149,14 +149,16 @@ Each phase ends in something runnable. Sizing assumes one developer.
 
 **Deferred:** the S3 storage backend (Phase 6, with deployment); a command to re-queue jobs lost from Redis; `Finding.status` changes (fix, snooze) arrive with the Phase 4 workflow.
 
-### Phase 3 — Accounts, tenancy & security (≈1 week)
-- [ ] Auth: Flask-Login + email/password (argon2) to start; OAuth (Google/GitHub) next. CSRF on all forms (Flask-WTF), secure cookies, session timeout.
-- [ ] Organisations with roles: Owner, Admin, Analyst, Viewer.
-- [ ] Rate limiting (Flask-Limiter) on login, upload and API.
-- [ ] Security headers (CSP, HSTS) via Flask-Talisman; stop passing server-built HTML tables through `|safe`.
-- [ ] `bandit` in CI, a security review pass, and tenant-isolation integration tests (user in org A can never read org B's data).
+### Phase 3 — Accounts, tenancy & security (≈1 week) — ✅ done 2026-11-26
+- [x] Auth: Flask-Login + email/password (argon2id, hashes upgraded on sign-in, equal timing for unknown emails). Sign-up creates the user and a new organisation they own. CSRF on every form (Flask-WTF, global), HttpOnly/SameSite cookies (Secure in production), 8-hour idle timeout (`FINOPS_SESSION_HOURS`), a fresh session at sign-in, POST-only sign-out. OAuth deferred.
+- [x] Organisations with roles: Owner, Admin, Analyst, Viewer (`accounts.py`). The active org is re-checked against memberships on every request, so removal is immediate; admins manage only analysts and viewers; an org always keeps an owner (the check locks the org row). Members page and an org switcher; `finops-users` for operators.
+- [x] Rate limiting (Flask-Limiter): login 10/min per IP and 20 failed/hour per email and client, sign-up 5/hour, upload 20/hour, status 120/min, 300/min otherwise; Redis-backed when configured. `FINOPS_TRUSTED_PROXIES` for running behind a proxy.
+- [x] Security headers written in `security.py` instead of Flask-Talisman (barely maintained): CSP with a per-request script nonce, HSTS in production, `nosniff`, `X-Frame-Options`, referrer and permissions policies, `no-store` on signed-in pages. No `|safe` left in templates.
+- [x] `bandit` in CI (since Phase 0); a security review pass (no critical or high findings; the medium ones are fixed, see below); tenant-isolation, role, CSRF and rate-limit tests. Audit log for sign-ins, org creation and every membership change. ADR `version-5/docs/adr/0002-accounts-and-sessions.md`.
 
-**Done when:** two orgs can use the app side by side with no data leakage.
+**Result:** two organisations use the app side by side; tests show one can't read, poll, list, switch into or change the other's analyses or members, even with a guessed id or a tampered session. 226 tests locally (the database tests also pass on PostgreSQL), 96% coverage.
+
+**Accepted / deferred:** sign-up says when an email is already registered (rate-limited); no password reset or email invites until there is an email service; OAuth and API tokens come with the Phase 4 JSON API. In production, set `FINOPS_REDIS_URL` so rate-limit counters are shared (the app warns otherwise).
 
 ### Phase 4 — Product UX (≈2 weeks)
 - [ ] Replace matplotlib PNGs with client-side charts (Chart.js / ECharts) fed by the JSON API.

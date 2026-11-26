@@ -53,6 +53,12 @@ Diagrams are written in [Mermaid](https://mermaid.js.org/), which renders on Git
 > writes findings and forecast points to the database (SQLAlchemy + Alembic,
 > SQLite locally, PostgreSQL in production). This matches the target
 > architecture in Part B, minus object storage on S3 and accounts (Phases 3 and 6).
+>
+> **Phase 3 (2026-11-26):** accounts and organisations are live as drawn in
+> §16: Flask-Login sessions, CSRF on every form, roles checked per route, and
+> the org chosen per request from the user's memberships. Security headers are
+> set in `finops_app/security.py` rather than Flask-Talisman. See
+> `version-5/docs/adr/0002-accounts-and-sessions.md`.
 
 ## 1. System context (today)
 
