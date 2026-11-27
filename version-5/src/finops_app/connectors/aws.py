@@ -146,7 +146,9 @@ class AwsConnector(BaseConnector):
         resp = s3.get_object(Bucket=self.s3_bucket, Key=key)
         content_length = resp.get("ContentLength")
         if content_length and content_length > max_bytes:
-            raise ValueError(f"S3 export {key} ({content_length} bytes) exceeds limit of {max_bytes} bytes")
+            raise ValueError(
+                f"S3 export {key} ({content_length} bytes) exceeds limit of {max_bytes} bytes"
+            )
 
         body = resp["Body"]
         if dest is not None:

@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import uuid
 
-from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, current_app, flash, redirect, render_template, url_for
 from werkzeug.wrappers import Response
 
 from finops_app import repository as repo
@@ -64,6 +64,7 @@ def index() -> str:
 def add_aws() -> Response:
     import os
     import re
+
     from flask import session as flask_session
 
     form = AwsConnectionForm()

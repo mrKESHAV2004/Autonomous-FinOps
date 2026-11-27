@@ -168,7 +168,9 @@ def _evaluate(row: Mapping[Hashable, Any], ml_score: float | None, months: float
 
     rule_results = detect_rule_signals(row)
     has_rules = len(rule_results) > 0
-    snapshot_only = has_rules and all(s[0] == SIGNAL_OLD_SNAPSHOT for s in rule_results) and not idle
+    snapshot_only = (
+        has_rules and all(s[0] == SIGNAL_OLD_SNAPSHOT for s in rule_results) and not idle
+    )
     for r_sig, r_rsn in rule_results:
         signals.append(r_sig)
         reasons.append(r_rsn)

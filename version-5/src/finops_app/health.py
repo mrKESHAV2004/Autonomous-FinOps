@@ -69,8 +69,8 @@ def readiness() -> tuple[Response, int]:
             if client is not None:
                 try:
                     client.close()
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug("Closing the Redis readiness client failed: %s", exc)
     else:
         components["redis"] = "in-memory (no Redis configured)"
 

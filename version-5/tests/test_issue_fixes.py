@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import tempfile
-from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -9,22 +7,17 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from finops_app.alerts import evaluate_analysis_for_alerts, is_safe_webhook_url, mask_destination
+from finops_app.alerts import is_safe_webhook_url, mask_destination
 from finops_app.analysis import FORECAST_METHOD_LABELS
-from finops_app.budgets import evaluate_budgets
 from finops_app.forms import AWS_ROLE_ARN_PATTERN
-from finops_app.model_quality import extract_evaluation_set
 from finops_app.model_registry import (
     get_active_version,
     register_version,
     rollback_version,
 )
-from finops_app.models import Analysis, Budget, Dataset, Finding, ModelVersion, Organization
+from finops_app.models import Analysis, Budget
 from finops_app.storage import S3Storage, StorageError
 from finops_core.models import (
-    AnalysisResult,
-    Finding as CoreFinding,
-    ForecastResult,
     SIGNAL_OLD_SNAPSHOT,
 )
 from finops_core.resources import find_waste
@@ -96,16 +89,17 @@ def test_model_registry_rollback_history(tmp_path: Path) -> None:
     db_path = tmp_path / "test_registry.db"
     db_url = f"sqlite:///{db_path}"
     from finops_app.db import Database, upgrade
+
     upgrade(db_url)
     db = Database(db_url)
 
     with db.session() as session:
         # Register 3 versions sequentially
-        v1 = register_version(session, "model_a", "v1.0.0", "Baseline", deploy_now=True)
+        register_version(session, "model_a", "v1.0.0", "Baseline", deploy_now=True)
         session.commit()
-        v2 = register_version(session, "model_a", "v2.0.0", "Enhanced", deploy_now=True)
+        register_version(session, "model_a", "v2.0.0", "Enhanced", deploy_now=True)
         session.commit()
-        v3 = register_version(session, "model_a", "v3.0.0", "Latest", deploy_now=True)
+        register_version(session, "model_a", "v3.0.0", "Latest", deploy_now=True)
         session.commit()
 
         # Current active is v3
@@ -145,7 +139,14 @@ def test_budget_projection_scaling() -> None:
         findings=[],
     )
     analysis.forecast_points = [
-        ForecastPoint(org_id="org_b", analysis_id="a1", day=f"2024-01-0{i}", value=100.0, lower=90.0, upper=110.0)
+        ForecastPoint(
+            org_id="org_b",
+            analysis_id="a1",
+            day=f"2024-01-0{i}",
+            value=100.0,
+            lower=90.0,
+            upper=110.0,
+        )
         for i in range(1, 8)
     ]
 
@@ -207,6 +208,7 @@ def test_s3_storage_prune_cache(tmp_path: Path) -> None:
     # Set mtime to 2 days ago
     import os
     import time
+
     two_days_ago = time.time() - (2 * 86400)
     os.utime(f1, (two_days_ago, two_days_ago))
 
@@ -227,6 +229,7 @@ def test_requests_in_pyproject_dependencies() -> None:
 
 def test_isolation_forest_single_job() -> None:
     from finops_core.detection import _fit_ensemble
+
     x = np.ones((10, 5))
     models, _, _ = _fit_ensemble(x, 0.1)
     for m in models:
@@ -235,6 +238,7 @@ def test_isolation_forest_single_job() -> None:
 
 def test_constant_cost_no_runtime_warning() -> None:
     import warnings
+
     from finops_core.detection import OptimizedZombieDetector
 
     df = pd.DataFrame(
@@ -263,13 +267,16 @@ def test_constant_cost_no_runtime_warning() -> None:
         assert len(features) >= 2
         # Ensure no divide by zero RuntimeWarning was raised
         div_zero_warnings = [
-            w for w in recorded if issubclass(w.category, RuntimeWarning) and "divide" in str(w.message)
+            w
+            for w in recorded
+            if issubclass(w.category, RuntimeWarning) and "divide" in str(w.message)
         ]
         assert len(div_zero_warnings) == 0
 
 
 def test_aws_download_export_streaming(tmp_path: Path) -> None:
     import io
+
     from finops_app.connectors.aws import AwsConnector
 
     mock_session = MagicMock()
@@ -297,7 +304,6 @@ def test_aws_download_export_streaming(tmp_path: Path) -> None:
     )
 
     dest = tmp_path / "downloaded.csv"
-    res = conn.download_export("cur/file.csv", dest=dest)
+    conn.download_export("cur/file.csv", dest=dest)
     assert dest.exists()
     assert dest.read_bytes() == b"stream_test!"
-

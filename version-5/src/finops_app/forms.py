@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from flask_wtf import FlaskForm
 from wtforms import (
     BooleanField,
@@ -18,8 +20,6 @@ from wtforms.validators import DataRequired, Email, Length, NumberRange, Optiona
 
 from finops_app.accounts import MAX_PASSWORD_LENGTH, ROLES
 from finops_app.triage import NOTE_MAX, STATUS_LABELS
-
-import re
 
 ROLE_CHOICES = [(r, r.capitalize()) for r in ROLES]
 EMAIL_MAX = 320

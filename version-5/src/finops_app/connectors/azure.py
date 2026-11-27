@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from finops_app.connectors.base import (
     BaseConnector,
     ConnectorVerificationResult,
@@ -37,5 +39,5 @@ class AzureConnector(BaseConnector):
     def list_exports(self) -> list[DiscoveredExport]:
         return []
 
-    def download_export(self, key: str) -> bytes:
+    def download_export(self, key: str, dest: Any = None) -> bytes | int:
         raise NotImplementedError("Azure download not yet implemented")

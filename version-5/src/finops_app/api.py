@@ -300,7 +300,7 @@ def save_budget_api() -> tuple[Response, int]:
 def list_alerts_api() -> tuple[Response, int]:
     session = get_session()
     org_id = current_org_id()
-    from finops_app.alerts import is_safe_webhook_url, mask_destination
+    from finops_app.alerts import mask_destination
 
     configs = repo.list_alert_configs(session, org_id)
     history = repo.list_alert_history(session, org_id, limit=20)
@@ -406,10 +406,14 @@ def list_models_api() -> tuple[Response, int]:
 @role_required("admin")
 def rollback_model_api(name: str) -> tuple[Response, int]:
     import os
+
     from flask import current_app
+
     from finops_app.model_registry import RegistryError, rollback_version
 
-    platform_admin_org = os.environ.get("FINOPS_PLATFORM_ADMIN_ORG") or current_app.config.get("PLATFORM_ADMIN_ORG")
+    platform_admin_org = os.environ.get("FINOPS_PLATFORM_ADMIN_ORG") or current_app.config.get(
+        "PLATFORM_ADMIN_ORG"
+    )
     org_id = current_org_id()
     if not platform_admin_org or org_id != platform_admin_org:
         return fail("Platform administrator access required to roll back global models.", 403)

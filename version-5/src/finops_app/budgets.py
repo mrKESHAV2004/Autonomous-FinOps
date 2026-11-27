@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -11,6 +12,8 @@ if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
     from finops_app.models import Analysis, Budget
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -35,7 +38,11 @@ def _service_or_account_spend_from_dataset(
         from flask import current_app
 
         storage = current_app.extensions.get("finops_storage") if current_app else None
-        if not storage or not getattr(analysis, "dataset", None) or not analysis.dataset.storage_key:
+        if (
+            not storage
+            or not getattr(analysis, "dataset", None)
+            or not analysis.dataset.storage_key
+        ):
             return None
         path = storage.local_path(analysis.dataset.storage_key)
         if not path or not path.exists():
@@ -62,7 +69,11 @@ def _service_or_account_spend_from_dataset(
                 mask = df[acc_col].astype(str).str.lower() == target
                 return float(df.loc[mask, cost_col].sum())
     except Exception:
-        pass
+        logger.warning(
+            "Could not read %s spend for budget scope from the raw dataset",
+            scope_type,
+            exc_info=True,
+        )
     return None
 
 
@@ -96,9 +107,7 @@ def evaluate_budget(budget: Budget, analysis: Analysis) -> BudgetStatus:
                 f for f in analysis.findings if (f.service or "").lower() == target
             ]
             total_svc_spend = sum(f.total_cost for f in matching_findings)
-        current = (
-            (total_svc_spend / period_days) * 30.0 if period_days > 30 else total_svc_spend
-        )
+        current = (total_svc_spend / period_days) * 30.0 if period_days > 30 else total_svc_spend
         projected = (total_svc_spend / period_days) * 30.0
     elif budget.scope_type == "account":
         target = (budget.scope_value or "").lower()
@@ -110,9 +119,7 @@ def evaluate_budget(budget: Budget, analysis: Analysis) -> BudgetStatus:
                 f for f in analysis.findings if (f.account or "").lower() == target
             ]
             total_acc_spend = sum(f.total_cost for f in matching_findings)
-        current = (
-            (total_acc_spend / period_days) * 30.0 if period_days > 30 else total_acc_spend
-        )
+        current = (total_acc_spend / period_days) * 30.0 if period_days > 30 else total_acc_spend
         projected = (total_acc_spend / period_days) * 30.0
     else:
         current = (total_spend / period_days) * 30.0 if period_days > 30 else total_spend
