@@ -21,6 +21,7 @@ TOP_WASTE_SERVICES = 5
 FORECAST_METHOD_LABELS = {
     "moving_average_7": "7-day moving average",
     "seasonal_weekly": "weekly seasonal pattern",
+    "naive_yesterday": "previous-day baseline",
     "none": "no history",
 }
 

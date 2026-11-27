@@ -1,12 +1,14 @@
-"""Alert evaluation and notification engine for Slack webhooks and Email."""
-
 from __future__ import annotations
 
+import ipaddress
 import logging
+import socket
+import urllib.parse
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 import requests
+from sqlalchemy import select
 
 from finops_app import repository as repo
 from finops_app.budgets import evaluate_budgets
@@ -17,6 +19,72 @@ if TYPE_CHECKING:
     from finops_app.models import AlertConfig, AlertHistory, Analysis
 
 logger = logging.getLogger(__name__)
+
+
+NAT64_PREFIX = ipaddress.ip_network("64:ff9b::/96")
+
+
+def _is_disallowed_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+    if ip.version == 6 and ip in NAT64_PREFIX:
+        embedded = ipaddress.IPv4Address(ip.packed[-4:])
+        return (
+            embedded.is_private
+            or embedded.is_loopback
+            or embedded.is_link_local
+            or embedded.is_multicast
+            or str(embedded) == "169.254.169.254"
+        )
+    return (
+        ip.is_private
+        or ip.is_loopback
+        or ip.is_link_local
+        or ip.is_reserved
+        or ip.is_multicast
+        or str(ip) == "169.254.169.254"
+    )
+
+
+def is_safe_webhook_url(url: str) -> tuple[bool, str | None]:
+    """Validate webhook URL against SSRF attacks (private IPs, localhost, AWS metadata)."""
+    try:
+        parsed = urllib.parse.urlsplit(url)
+        if parsed.scheme != "https":
+            return False, "Webhook URL must use HTTPS"
+        host = parsed.hostname
+        if not host:
+            return False, "Invalid webhook host"
+        if (
+            host.lower() in ("localhost", "169.254.169.254", "metadata", "instance-data")
+            or host.endswith(".local")
+            or host.endswith(".internal")
+        ):
+            return False, "Webhook destination cannot be internal or localhost"
+        try:
+            addrinfo = socket.getaddrinfo(host, parsed.port or 443)
+            for _, _, _, _, sockaddr in addrinfo:
+                ip = ipaddress.ip_address(sockaddr[0])
+                if _is_disallowed_ip(ip):
+                    return False, "Webhook destination cannot be a private or internal address"
+        except socket.gaierror:
+            try:
+                ip = ipaddress.ip_address(host)
+                if _is_disallowed_ip(ip):
+                    return False, "Webhook destination cannot be a private or internal address"
+            except ValueError:
+                if not (host.endswith(".slack.com") or host.endswith(".discord.com")):
+                    return False, "Unable to resolve webhook hostname"
+        return True, None
+    except Exception as exc:
+        return False, f"Invalid webhook URL: {exc}"
+
+
+def mask_destination(destination: str, channel_type: str = "slack") -> str:
+    """Mask sensitive tokens in Slack webhook URLs for display."""
+    if channel_type == "slack" and "hooks.slack.com" in destination:
+        parts = destination.split("/")
+        if len(parts) >= 6:
+            return "/".join(parts[:-1]) + "/••••••••"
+    return destination
 
 
 @dataclass(frozen=True)
@@ -37,29 +105,49 @@ def evaluate_analysis_for_alerts(
     """Inspect analysis metrics and findings against an alert configuration's triggers."""
     events: list[AlertEvent] = []
 
-    # 1. High-confidence waste findings
+    # 1. High-confidence waste findings (case-insensitive for 'High'/'high' and deduplicated across days)
     if config.notify_high_confidence:
-        high_conf = [f for f in analysis.findings if f.confidence == "high" and f.status == "open"]
-        if high_conf:
-            total_waste = sum(f.est_monthly_waste for f in high_conf)
-            top_resources = [
-                f.resource_name or f.resource_id or f.resource_key for f in high_conf[:3]
-            ]
-            summary = (
-                f"{len(high_conf)} new high-confidence zombie/waste finding(s) detected, "
-                f"totaling ~${total_waste:,.2f}/mo potential waste."
-            )
-            events.append(
-                AlertEvent(
-                    event_type="high_confidence_findings",
-                    summary=summary,
-                    details={
-                        "count": len(high_conf),
-                        "total_monthly_waste": round(total_waste, 2),
-                        "top_resources": top_resources,
-                    },
+        all_high = [
+            f
+            for f in analysis.findings
+            if (f.confidence or "").lower() == "high" and f.status == "open"
+        ]
+        if all_high:
+            from finops_app.models import Finding
+
+            earlier_keys: set[str] = set()
+            if analysis.id:
+                keys = [f.resource_key for f in all_high]
+                earlier_keys = set(
+                    session.scalars(
+                        select(Finding.resource_key).where(
+                            Finding.org_id == org_id,
+                            Finding.analysis_id != analysis.id,
+                            Finding.resource_key.in_(keys),
+                        )
+                    ).all()
                 )
-            )
+            high_conf = [f for f in all_high if f.resource_key not in earlier_keys]
+            if high_conf:
+                total_waste = sum(f.est_monthly_waste for f in high_conf)
+                top_resources = [
+                    f.resource_name or f.resource_id or f.resource_key for f in high_conf[:3]
+                ]
+                summary = (
+                    f"{len(high_conf)} new high-confidence zombie/waste finding(s) detected, "
+                    f"totaling ~${total_waste:,.2f}/mo potential waste."
+                )
+                events.append(
+                    AlertEvent(
+                        event_type="high_confidence_findings",
+                        summary=summary,
+                        details={
+                            "count": len(high_conf),
+                            "total_monthly_waste": round(total_waste, 2),
+                            "top_resources": top_resources,
+                        },
+                    )
+                )
 
     # 2. Budget exceeded
     if config.notify_budget_exceeded:
@@ -153,11 +241,15 @@ def send_slack_notification(
         "text": f"FinOps Alert ({org_name}): {event.summary}",
     }
 
+    safe, reason = is_safe_webhook_url(webhook_url)
+    if not safe:
+        return False, f"Blocked webhook URL: {reason}"
+
     try:
-        resp = requests.post(webhook_url, json=payload, timeout=5)
+        resp = requests.post(webhook_url, json=payload, timeout=5, allow_redirects=False)
         if resp.status_code == 200:
             return True, None
-        return False, f"Slack webhook returned HTTP {resp.status_code}: {resp.text[:100]}"
+        return False, f"Slack webhook returned HTTP {resp.status_code}"
     except Exception as exc:
         return False, f"Failed to send Slack webhook: {exc}"
 

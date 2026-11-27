@@ -26,7 +26,13 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from finops_core.models import SIGNAL_IDLE, SIGNAL_ML_OUTLIER, SIGNAL_OVERPRICED, Finding
+from finops_core.models import (
+    SIGNAL_IDLE,
+    SIGNAL_ML_OUTLIER,
+    SIGNAL_OLD_SNAPSHOT,
+    SIGNAL_OVERPRICED,
+    Finding,
+)
 from finops_core.rules import detect_rule_signals
 
 OVERPRICE_RATIO = 3.0
@@ -162,6 +168,7 @@ def _evaluate(row: Mapping[Hashable, Any], ml_score: float | None, months: float
 
     rule_results = detect_rule_signals(row)
     has_rules = len(rule_results) > 0
+    snapshot_only = has_rules and all(s[0] == SIGNAL_OLD_SNAPSHOT for s in rule_results) and not idle
     for r_sig, r_rsn in rule_results:
         signals.append(r_sig)
         reasons.append(r_rsn)
@@ -178,8 +185,10 @@ def _evaluate(row: Mapping[Hashable, Any], ml_score: float | None, months: float
     if not signals:
         return None
 
-    if idle or has_rules:
+    if idle or (has_rules and not snapshot_only):
         waste = cost
+    elif snapshot_only:
+        waste = round(cost * 0.75, 6)
     elif has_peers:
         waste = max(cost - usage * float(row["peer_median"]), 0.0)
     else:
@@ -200,16 +209,24 @@ def _evaluate(row: Mapping[Hashable, Any], ml_score: float | None, months: float
         days_active=int(row["days_active"]),
         estimated_waste=round(waste, 6),
         estimated_monthly_waste=round(waste / months, 6),
-        confidence=_confidence(idle, overpriced, ml_score is not None, has_rules),
+        confidence=_confidence(
+            idle, overpriced, ml_score is not None, has_rules, snapshot_only=snapshot_only
+        ),
         signals=tuple(signals),
         reasons=tuple(reasons),
     )
 
 
-def _confidence(idle: bool, overpriced: bool, ml_flagged: bool, has_rules: bool = False) -> str:
-    if has_rules or idle or (overpriced and ml_flagged):
+def _confidence(
+    idle: bool,
+    overpriced: bool,
+    ml_flagged: bool,
+    has_rules: bool = False,
+    snapshot_only: bool = False,
+) -> str:
+    if (has_rules and not snapshot_only) or idle or (overpriced and ml_flagged):
         return "High"
-    if overpriced:
+    if overpriced or (has_rules and snapshot_only):
         return "Medium"
     return "Low"
 

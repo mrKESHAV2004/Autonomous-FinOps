@@ -14,14 +14,17 @@ from wtforms import (
     StringField,
     TextAreaField,
 )
-from wtforms.validators import DataRequired, Email, Length, NumberRange, Optional
+from wtforms.validators import DataRequired, Email, Length, NumberRange, Optional, Regexp
 
 from finops_app.accounts import MAX_PASSWORD_LENGTH, ROLES
 from finops_app.triage import NOTE_MAX, STATUS_LABELS
 
+import re
+
 ROLE_CHOICES = [(r, r.capitalize()) for r in ROLES]
 EMAIL_MAX = 320
 NAME_MAX = 200
+AWS_ROLE_ARN_PATTERN = re.compile(r"^arn:aws(?:-[a-z]+)?:iam::\d+:role/[\w+=,.@\-_/]+$")
 
 
 def _strip(value: str | None) -> str | None:
@@ -91,12 +94,23 @@ class AwsConnectionForm(FlaskForm):
     role_arn = StringField(
         "IAM Role ARN",
         filters=[_strip],
-        validators=[DataRequired("Enter the IAM Role ARN."), Length(max=255)],
+        validators=[
+            DataRequired("Enter the IAM Role ARN."),
+            Length(max=255),
+            Regexp(
+                r"^arn:aws(?:-[a-z]+)?:iam::\d+:role/[\w+=,.@\-_/]+$",
+                message="Invalid IAM Role ARN format.",
+            ),
+        ],
     )
     s3_bucket = StringField(
         "S3 Bucket Name",
         filters=[_strip],
-        validators=[DataRequired("Enter the S3 bucket name."), Length(max=255)],
+        validators=[
+            DataRequired("Enter the S3 bucket name."),
+            Length(max=255),
+            Regexp(r"^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$", message="Invalid S3 bucket name."),
+        ],
     )
     s3_prefix = StringField(
         "S3 Prefix (optional)", filters=[_strip], validators=[Optional(), Length(max=512)]
@@ -105,7 +119,11 @@ class AwsConnectionForm(FlaskForm):
         "AWS Region",
         default="us-east-1",
         filters=[_strip],
-        validators=[DataRequired(), Length(max=64)],
+        validators=[
+            DataRequired(),
+            Length(max=64),
+            Regexp(r"^[a-z]{2}(?:-[a-z]+)+-\d+$", message="Invalid AWS region format."),
+        ],
     )
 
 

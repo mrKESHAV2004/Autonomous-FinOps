@@ -11,6 +11,7 @@ import logging
 from typing import Any
 
 from flask import Blueprint, Response, current_app, jsonify
+from flask_login import login_required
 from sqlalchemy import text
 
 from finops_app.config import Config
@@ -48,11 +49,12 @@ def readiness() -> tuple[Response, int]:
         components["database"] = "ok"
     except Exception as exc:
         logger.error("Readiness check failed for database: %s", exc)
-        components["database"] = f"error: {exc}"
+        components["database"] = "error"
         healthy = False
 
     # Check Redis if configured
     if cfg.redis_url:
+        client = None
         try:
             import redis
 
@@ -61,8 +63,14 @@ def readiness() -> tuple[Response, int]:
             components["redis"] = "ok"
         except Exception as exc:
             logger.error("Readiness check failed for Redis: %s", exc)
-            components["redis"] = f"error: {exc}"
+            components["redis"] = "error"
             healthy = False
+        finally:
+            if client is not None:
+                try:
+                    client.close()
+                except Exception:
+                    pass
     else:
         components["redis"] = "in-memory (no Redis configured)"
 
@@ -77,6 +85,7 @@ def readiness() -> tuple[Response, int]:
 
 
 @bp.get("/metrics")
+@login_required
 def metrics() -> Response:
     """Operational metrics: queue depth, database counts."""
     cfg = _config()
@@ -107,7 +116,8 @@ def metrics() -> Response:
         data["datasets_total"] = datasets_count
         data["analyses_in_flight"] = in_flight
     except Exception as exc:
-        data["error"] = f"metrics query error: {exc}"
+        logger.error("Metrics query error: %s", exc)
+        data["error"] = "metrics query error"
 
     if cfg.redis_url:
         try:

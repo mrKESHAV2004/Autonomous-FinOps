@@ -68,8 +68,6 @@ def get_analysis(analysis_id: str) -> tuple[Response, int]:
     data = ser.analysis_dict(a)
     if a.status == "succeeded":
         session = get_session()
-        triage.wake_expired_snoozes(session, a.org_id, a.id)
-        session.commit()
         result = repo.load_result(a)
         data |= {
             "period": {"start": a.period_start, "end": a.period_end, "days": a.period_days},
@@ -162,31 +160,57 @@ def list_connectors() -> tuple[Response, int]:
 @bp.post("/connectors/aws")
 @role_required("analyst")
 def add_aws_connector() -> tuple[Response, int]:
+    import os
+    import re
     import uuid
 
     payload = request.get_json(silent=True) or {}
     name = payload.get("name")
     role_arn = payload.get("role_arn")
     s3_bucket = payload.get("s3_bucket")
+    region = payload.get("region") or "us-east-1"
     if not name or not role_arn or not s3_bucket:
         return fail("name, role_arn and s3_bucket are required.", 400)
 
+    if not re.match(r"^arn:aws(?:-[a-z]+)?:iam::\d+:role/[\w+=,.@\-_/]+$", str(role_arn)):
+        return fail("Invalid IAM role ARN format.", 400)
+    if not re.match(r"^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$", str(s3_bucket)):
+        return fail("Invalid S3 bucket name.", 400)
+    if not re.match(r"^[a-z]{2}(?:-[a-z]+)+-\d+$", str(region)):
+        return fail("Invalid AWS region format.", 400)
+
+    own_account = os.environ.get("FINOPS_AWS_ACCOUNT_ID") or os.environ.get("AWS_ACCOUNT_ID")
+    if own_account:
+        m = re.search(r"arn:aws(?:-[a-z]+)?:iam::(\d+):role/", str(role_arn))
+        if m and m.group(1) == own_account:
+            return fail("Role ARN cannot point to internal FinOps AWS account.", 400)
+
     session = get_session()
     org_id = current_org_id()
+    # Server-generated external ID (never accept client-supplied ID)
+    external_id = uuid.uuid4().hex
     conn = repo.create_connection(
         session,
         org_id=org_id,
         provider="aws",
         name=name,
         role_arn=role_arn,
-        external_id=payload.get("external_id") or uuid.uuid4().hex,
+        external_id=external_id,
         s3_bucket=s3_bucket,
         s3_prefix=payload.get("s3_prefix"),
-        region=payload.get("region") or "us-east-1",
+        region=region,
     )
     repo.audit(session, org_id, "connection.created", "cloud_connection", conn.id)
     session.commit()
-    return ok({"id": conn.id, "name": conn.name, "status": conn.status}, status=201)
+    return ok(
+        {
+            "id": conn.id,
+            "name": conn.name,
+            "external_id": conn.external_id,
+            "status": conn.status,
+        },
+        status=201,
+    )
 
 
 @bp.post("/connectors/<connection_id>/verify")
@@ -276,6 +300,8 @@ def save_budget_api() -> tuple[Response, int]:
 def list_alerts_api() -> tuple[Response, int]:
     session = get_session()
     org_id = current_org_id()
+    from finops_app.alerts import is_safe_webhook_url, mask_destination
+
     configs = repo.list_alert_configs(session, org_id)
     history = repo.list_alert_history(session, org_id, limit=20)
     data = {
@@ -283,7 +309,7 @@ def list_alerts_api() -> tuple[Response, int]:
             {
                 "id": c.id,
                 "channel_type": c.channel_type,
-                "destination": c.destination,
+                "destination": mask_destination(c.destination, c.channel_type),
                 "notify_high_confidence": c.notify_high_confidence,
                 "notify_budget_exceeded": c.notify_budget_exceeded,
                 "notify_spend_spikes": c.notify_spend_spikes,
@@ -310,11 +336,18 @@ def list_alerts_api() -> tuple[Response, int]:
 @bp.post("/alerts")
 @role_required("admin")
 def save_alert_api() -> tuple[Response, int]:
+    from finops_app.alerts import is_safe_webhook_url
+
     payload = request.get_json(silent=True) or {}
     channel_type = payload.get("channel_type", "slack")
     destination = payload.get("destination")
     if not destination:
         return fail("destination is required.", 400)
+
+    if channel_type == "slack":
+        safe, reason = is_safe_webhook_url(destination)
+        if not safe:
+            return fail(f"Invalid webhook URL: {reason}", 400)
 
     session = get_session()
     org_id = current_org_id()
@@ -372,7 +405,14 @@ def list_models_api() -> tuple[Response, int]:
 @bp.post("/models/<name>/rollback")
 @role_required("admin")
 def rollback_model_api(name: str) -> tuple[Response, int]:
+    import os
+    from flask import current_app
     from finops_app.model_registry import RegistryError, rollback_version
+
+    platform_admin_org = os.environ.get("FINOPS_PLATFORM_ADMIN_ORG") or current_app.config.get("PLATFORM_ADMIN_ORG")
+    org_id = current_org_id()
+    if not platform_admin_org or org_id != platform_admin_org:
+        return fail("Platform administrator access required to roll back global models.", 403)
 
     session = get_session()
     try:

@@ -14,7 +14,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from datetime import date, timedelta
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from finops_app.models import Analysis, Finding, FindingEvent, utcnow
 from finops_app.repository import audit, scoped
@@ -168,6 +168,7 @@ def _latest_earlier_findings(
         stmt = (
             scoped(Finding, analysis.org_id)
             .join(Finding.analysis)
+            .options(selectinload(Finding.analysis).selectinload(Analysis.dataset))
             .where(
                 Finding.resource_key.in_(chunk),
                 Finding.analysis_id != analysis.id,

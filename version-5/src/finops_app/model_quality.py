@@ -29,13 +29,19 @@ from finops_core.models import Finding as CoreFinding
 
 def extract_evaluation_set(session: Session, org_id: str) -> list[LabelledFinding]:
     """Extract labelled findings from historical triage decisions for one organization."""
-    query = scoped(DbFinding, org_id).where(
-        DbFinding.status.in_(["fixed", "acknowledged", "false_positive"])
+    query = (
+        scoped(DbFinding, org_id)
+        .where(DbFinding.status.in_(["fixed", "acknowledged", "false_positive"]))
+        .order_by(DbFinding.status_changed_at.desc().nullslast(), DbFinding.id.desc())
     )
     rows = session.scalars(query).all()
 
+    seen_keys: set[str] = set()
     items: list[LabelledFinding] = []
     for r in rows:
+        if r.resource_key in seen_keys:
+            continue
+        seen_keys.add(r.resource_key)
         core = CoreFinding(
             resource_key=r.resource_key,
             resource_id=r.resource_id,

@@ -50,19 +50,29 @@ def process_analysis(db: Database, storage: Storage, org_id: str, analysis_id: s
             carried = triage.carry_over(session, analysis)
             if carried:
                 logger.info("Carried over decisions", extra={"analysis": analysis_id, "n": carried})
-            from finops_app.alerts import dispatch_alerts_for_analysis
-
-            try:
-                dispatched = dispatch_alerts_for_analysis(session, org_id, analysis)
-                if dispatched:
-                    logger.info(
-                        "Dispatched alerts",
-                        extra={"analysis": analysis_id, "n": len(dispatched)},
-                    )
-            except Exception:
-                logger.exception("Alert dispatch error", extra={"analysis": analysis_id})
+            triage.wake_expired_snoozes(session, analysis.org_id, analysis.id)
+            session.commit()
         else:
             repo.mark_failed(session, analysis, outcome)
+            session.commit()
+
+    if isinstance(outcome, AnalysisResult):
+        from finops_app.alerts import dispatch_alerts_for_analysis
+
+        try:
+            with db.session() as alert_session:
+                alert_analysis = repo.get_analysis(alert_session, org_id, analysis_id)
+                if alert_analysis:
+                    dispatched = dispatch_alerts_for_analysis(alert_session, org_id, alert_analysis)
+                    if dispatched:
+                        alert_session.commit()
+                        logger.info(
+                            "Dispatched alerts",
+                            extra={"analysis": analysis_id, "n": len(dispatched)},
+                        )
+        except Exception:
+            logger.exception("Alert dispatch error", extra={"analysis": analysis_id})
+
     logger.info(
         "Analysis finished", extra={"analysis": analysis_id, "ok": not isinstance(outcome, str)}
     )

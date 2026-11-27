@@ -94,11 +94,13 @@ class S3Storage:
         s3_client: Any = None,
         cache_dir: Path | None = None,
         endpoint_url: str | None = None,
+        max_bytes: int = 50 * 1024 * 1024,
     ) -> None:
         self.bucket = bucket
         self.prefix = prefix.strip("/")
         self._client = s3_client
         self.endpoint_url = endpoint_url
+        self.max_bytes = max_bytes
         self.cache_dir = (
             cache_dir.resolve()
             if cache_dir is not None
@@ -159,6 +161,19 @@ class S3Storage:
         from botocore.exceptions import ClientError
 
         try:
+            head = client.head_object(Bucket=self.bucket, Key=s3_key)
+            content_length = head.get("ContentLength", 0)
+            if self.max_bytes and content_length > self.max_bytes:
+                raise StorageError(
+                    f"S3 object {key} size ({content_length} bytes) exceeds limit ({self.max_bytes} bytes)"
+                )
+        except ClientError as exc:
+            code = exc.response.get("Error", {}).get("Code", "")
+            if code in ("404", "NoSuchKey", "403"):
+                raise FileNotFoundError(key) from exc
+            raise StorageError(f"failed to check {key} in S3: {exc}") from exc
+
+        try:
             client.download_file(self.bucket, s3_key, str(dest))
         except ClientError as exc:
             code = exc.response.get("Error", {}).get("Code", "")
@@ -169,6 +184,24 @@ class S3Storage:
             raise StorageError(f"failed to download {key} from S3: {exc}") from exc
 
         return dest
+
+    def prune_cache(self, max_age_seconds: int = 86400) -> int:
+        """Remove cached local files older than max_age_seconds (default 1 day)."""
+        import time
+
+        now = time.time()
+        pruned = 0
+        if not self.cache_dir.exists():
+            return 0
+        for item in self.cache_dir.glob("**/*"):
+            if item.is_file():
+                try:
+                    if now - item.stat().st_mtime > max_age_seconds:
+                        item.unlink(missing_ok=True)
+                        pruned += 1
+                except Exception:
+                    logger.debug("Failed to prune cached file %s", item, exc_info=True)
+        return pruned
 
     def delete(self, key: str) -> bool:
         if not self.exists(key):
@@ -210,5 +243,6 @@ def build_storage(cfg: Config) -> Storage:
             prefix=cfg.s3_prefix,
             cache_dir=cfg.upload_dir,
             endpoint_url=cfg.s3_endpoint_url,
+            max_bytes=cfg.max_upload_mb * 1024 * 1024,
         )
     return LocalStorage(cfg.upload_dir)

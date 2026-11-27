@@ -8,7 +8,13 @@ from flask import Blueprint, abort, flash, redirect, render_template, url_for
 from werkzeug.wrappers import Response
 
 from finops_app import repository as repo
-from finops_app.alerts import AlertEvent, send_email_notification, send_slack_notification
+from finops_app.alerts import (
+    AlertEvent,
+    is_safe_webhook_url,
+    mask_destination,
+    send_email_notification,
+    send_slack_notification,
+)
 from finops_app.auth import current_org_id, role_required
 from finops_app.db import get_session
 from finops_app.forms import AlertConfigForm, ConfirmForm
@@ -32,6 +38,7 @@ def index() -> str:
         history=history,
         alert_form=AlertConfigForm(),
         confirm_form=ConfirmForm(),
+        mask_destination=mask_destination,
         active="alerts",
     )
 
@@ -46,6 +53,14 @@ def save_config() -> Response:
                 flash(f"{field}: {error}", "danger")
         return redirect(url_for("alerts.index"))
 
+    channel_type = form.channel_type.data or "slack"
+    destination = form.destination.data or ""
+    if channel_type == "slack":
+        safe, reason = is_safe_webhook_url(destination)
+        if not safe:
+            flash(f"Invalid webhook URL: {reason}", "danger")
+            return redirect(url_for("alerts.index"))
+
     session = get_session()
     org_id = current_org_id()
 
@@ -53,8 +68,8 @@ def save_config() -> Response:
         cfg = repo.save_alert_config(
             session,
             org_id=org_id,
-            channel_type=form.channel_type.data or "slack",
-            destination=form.destination.data or "",
+            channel_type=channel_type,
+            destination=destination,
             notify_high_confidence=bool(form.notify_high_confidence.data),
             notify_budget_exceeded=bool(form.notify_budget_exceeded.data),
             notify_spend_spikes=bool(form.notify_spend_spikes.data),
@@ -114,8 +129,9 @@ def test_channel(config_id: str) -> Response:
     else:
         ok, err = send_email_notification(cfg.destination, test_event, "Test Org")
 
+    masked = mask_destination(cfg.destination, cfg.channel_type)
     if ok:
-        flash(f"Test notification sent successfully to {cfg.destination}.", "success")
+        flash(f"Test notification sent successfully to {masked}.", "success")
     else:
         flash(f"Test notification failed: {err}", "danger")
 

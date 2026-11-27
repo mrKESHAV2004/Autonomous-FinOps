@@ -41,6 +41,6 @@ class BaseConnector(ABC):
         ...
 
     @abstractmethod
-    def download_export(self, key: str) -> bytes:
-        """Download a specific export object as raw bytes."""
+    def download_export(self, key: str, dest: Any = None) -> bytes | int:
+        """Download a specific export object as raw bytes or stream to dest."""
         ...

@@ -87,12 +87,12 @@ def sync_connection(
         return None
 
     logger.info("Downloading export %s (%d bytes)", newest.key, newest.size_bytes)
-    data = connector.download_export(newest.key)
-
     filename = newest.key.split("/")[-1]
     with tempfile.NamedTemporaryFile(suffix=f"_{filename}", delete=False) as tmp:
         tmp_path = Path(tmp.name)
-        tmp.write(data)
+        data = connector.download_export(newest.key, dest=tmp)
+        if isinstance(data, (bytes, bytearray)):
+            tmp.write(data)
 
     try:
         check = check_contents(tmp_path, max_rows=max_rows)
@@ -120,7 +120,7 @@ def sync_connection(
             conn.id,
             {"filename": filename, "export_key": newest.key, "analysis_id": analysis.id},
         )
-        session.flush()
+        session.commit()
 
         queue.enqueue(conn.org_id, analysis.id)
         logger.info(

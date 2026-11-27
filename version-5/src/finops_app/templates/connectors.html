@@ -97,7 +97,6 @@
                 <p style="margin-top:1.5rem;"><strong>Step 2: Enter AWS Details</strong></p>
                 <form method="post" action="{{ url_for('connectors.add_aws') }}" class="flow" style="margin-top:1rem;">
                     {{ aws_form.csrf_token }}
-                    <input type="hidden" name="external_id" value="{{ suggested_external_id }}">
 
                     <div class="field">
                         <label for="name">Connection Name</label>

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import urllib.parse
 from typing import Any
 
@@ -17,7 +18,9 @@ from finops_app.connectors.base import (
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_APP_AWS_ACCOUNT = "123456789012"  # FinOps SaaS account ID for trust policy
+DEFAULT_APP_AWS_ACCOUNT = (
+    os.environ.get("FINOPS_AWS_ACCOUNT_ID") or os.environ.get("AWS_ACCOUNT_ID") or "123456789012"
+)
 
 
 class AwsConnector(BaseConnector):
@@ -45,7 +48,7 @@ class AwsConnector(BaseConnector):
         sts = self._session.client("sts", region_name=self.region)
         resp = sts.assume_role(
             RoleArn=self.role_arn,
-            RoleSessionName="FinOpsBillingConnector",
+            RoleSessionName=f"FinOps-{self.external_id[:16]}",
             ExternalId=self.external_id,
             DurationSeconds=3600,
         )
@@ -130,11 +133,34 @@ class AwsConnector(BaseConnector):
         exports.sort(key=lambda x: x.last_modified, reverse=True)
         return exports
 
-    def download_export(self, key: str) -> bytes:
-        """Download a billing export file from S3."""
+    def download_export(
+        self,
+        key: str,
+        dest: Any = None,
+        max_bytes: int = 50 * 1024 * 1024,
+    ) -> bytes | int:
+        """Download a billing export file from S3, streaming directly to disk if dest is provided."""
+        import shutil
+
         s3 = self._get_s3_client()
         resp = s3.get_object(Bucket=self.s3_bucket, Key=key)
-        return resp["Body"].read()
+        content_length = resp.get("ContentLength")
+        if content_length and content_length > max_bytes:
+            raise ValueError(f"S3 export {key} ({content_length} bytes) exceeds limit of {max_bytes} bytes")
+
+        body = resp["Body"]
+        if dest is not None:
+            if hasattr(dest, "write"):
+                shutil.copyfileobj(body, dest)
+            else:
+                with open(dest, "wb") as f:
+                    shutil.copyfileobj(body, f)
+            return content_length or 0
+
+        data = body.read(max_bytes + 1)
+        if len(data) > max_bytes:
+            raise ValueError(f"S3 export {key} exceeds limit of {max_bytes} bytes")
+        return data
 
     @classmethod
     def generate_cloudformation_template(
@@ -150,6 +176,11 @@ class AwsConnector(BaseConnector):
             "AWSTemplateFormatVersion": "2010-09-09",
             "Description": "IAM role for Autonomous-FinOps read-only billing export access",
             "Parameters": {
+                "FinOpsAwsAccountId": {
+                    "Type": "String",
+                    "Default": app_aws_account_id,
+                    "Description": "AWS account ID of the Autonomous-FinOps service",
+                },
                 "ExternalId": {
                     "Type": "String",
                     "Default": external_id,
@@ -171,7 +202,11 @@ class AwsConnector(BaseConnector):
                             "Statement": [
                                 {
                                     "Effect": "Allow",
-                                    "Principal": {"AWS": f"arn:aws:iam::{app_aws_account_id}:root"},
+                                    "Principal": {
+                                        "AWS": {
+                                            "Fn::Sub": "arn:aws:iam::${FinOpsAwsAccountId}:root"
+                                        }
+                                    },
                                     "Action": "sts:AssumeRole",
                                     "Condition": {
                                         "StringEquals": {"sts:ExternalId": {"Ref": "ExternalId"}}

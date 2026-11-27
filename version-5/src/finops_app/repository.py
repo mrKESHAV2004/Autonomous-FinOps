@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Any, TypeVar
 
 from sqlalchemy import Select, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from finops_app.models import (
     AlertConfig,
@@ -116,7 +116,12 @@ def get_analysis(session: Session, org_id: str, analysis_id: str) -> Analysis | 
 
 
 def list_analyses(session: Session, org_id: str, limit: int = HISTORY_LIMIT) -> list[Analysis]:
-    stmt = scoped(Analysis, org_id).order_by(Analysis.created_at.desc()).limit(limit)
+    stmt = (
+        scoped(Analysis, org_id)
+        .options(selectinload(Analysis.dataset))
+        .order_by(Analysis.created_at.desc())
+        .limit(limit)
+    )
     return list(session.scalars(stmt))
 
 
@@ -273,8 +278,8 @@ def get_connection(session: Session, org_id: str, connection_id: str) -> CloudCo
 
 
 def all_active_connections(session: Session) -> list[CloudConnection]:
-    """All active cloud connections across all orgs (for background sync runner)."""
-    stmt = select(CloudConnection).where(CloudConnection.status == "active")
+    """All active cloud connections across all orgs (for background sync runner, retries errors)."""
+    stmt = select(CloudConnection).where(CloudConnection.status.in_(["active", "error"]))
     return list(session.scalars(stmt))
 
 

@@ -26,7 +26,7 @@ import pandas as pd
 from finops_core.detection import OptimizedZombieDetector
 from finops_core.errors import DataValidationError
 from finops_core.forecast_baseline import HORIZON_DAYS, daily_series, forecast_daily
-from finops_core.forecasting import AdvancedForecaster
+from finops_core.research.forecasting import AdvancedForecaster
 from finops_core.preprocessing import DataPreprocessor
 
 logger = logging.getLogger(__name__)

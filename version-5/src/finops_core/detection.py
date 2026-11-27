@@ -75,11 +75,13 @@ class OptimizedZombieDetector:
         if len(available) > 5:
             variances = df[available].var()
             high_var = variances[variances > MIN_FEATURE_VARIANCE].index.tolist()
-            if target_col in df.columns:
+            if target_col in df.columns and float(df[target_col].std()) > 0:
                 correlations = df[high_var].corrwith(df[target_col]).abs()
                 available = correlations.nlargest(
                     min(MAX_SELECTED_FEATURES, len(high_var))
                 ).index.tolist()
+            elif high_var:
+                available = high_var[:MAX_SELECTED_FEATURES]
 
         if len(available) < 2:
             available = list(FALLBACK_FEATURES)
@@ -162,7 +164,7 @@ def _fit_ensemble(
     ]  # fmt: skip
     models, predictions, decisions = [], [], []
     for params in configs:
-        model = IsolationForest(n_jobs=-1, verbose=0, **params)
+        model = IsolationForest(n_jobs=1, verbose=0, **params)
         predictions.append(model.fit_predict(x_scaled))
         decisions.append(model.decision_function(x_scaled))
         models.append(model)

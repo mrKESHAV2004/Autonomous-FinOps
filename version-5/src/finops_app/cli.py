@@ -60,6 +60,7 @@ def delete_expired_uploads(db: Database, storage: Storage, retention_days: int) 
             dataset.raw_deleted_at = utcnow()
             repo.audit(session, dataset.org_id, "dataset.raw_deleted", "dataset", dataset.id)
             deleted += 1
+    getattr(storage, "prune_cache", lambda: 0)()
     return deleted
 
 

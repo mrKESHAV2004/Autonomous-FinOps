@@ -35,8 +35,14 @@ def index() -> str:
     org_id = current_org_id()
     connections = repo.list_connections(session, org_id)
 
-    # Provide a fresh external ID for new AWS connections
-    suggested_external_id = uuid.uuid4().hex
+    from flask import session as flask_session
+
+    # Provide a server-generated external ID stored in session for new AWS connections
+    suggested_external_id = flask_session.get("suggested_external_id")
+    if not suggested_external_id:
+        suggested_external_id = uuid.uuid4().hex
+        flask_session["suggested_external_id"] = suggested_external_id
+
     cf_template = AwsConnector.generate_cloudformation_template(
         external_id=suggested_external_id,
         s3_bucket="your-cur-export-bucket",
@@ -56,6 +62,10 @@ def index() -> str:
 @bp.post("/aws")
 @role_required("analyst")
 def add_aws() -> Response:
+    import os
+    import re
+    from flask import session as flask_session
+
     form = AwsConnectionForm()
     if not form.validate_on_submit():
         for field, errors in form.errors.items():
@@ -63,9 +73,18 @@ def add_aws() -> Response:
                 flash(f"{field}: {error}", "danger")
         return redirect(url_for("connectors.index"))
 
+    role_arn = form.role_arn.data or ""
+    own_account = os.environ.get("FINOPS_AWS_ACCOUNT_ID") or os.environ.get("AWS_ACCOUNT_ID")
+    if own_account:
+        m = re.search(r"arn:aws(?:-[a-z]+)?:iam::(\d+):role/", role_arn)
+        if m and m.group(1) == own_account:
+            flash("Role ARN cannot point to internal FinOps AWS account.", "danger")
+            return redirect(url_for("connectors.index"))
+
     session = get_session()
     org_id = current_org_id()
-    external_id = request.form.get("external_id") or uuid.uuid4().hex
+    # Server-generated external ID (never accept client-specified IDs)
+    external_id = flask_session.pop("suggested_external_id", None) or uuid.uuid4().hex
 
     try:
         conn = repo.create_connection(
@@ -73,7 +92,7 @@ def add_aws() -> Response:
             org_id=org_id,
             provider="aws",
             name=form.name.data or "AWS Connection",
-            role_arn=form.role_arn.data,
+            role_arn=role_arn,
             external_id=external_id,
             s3_bucket=form.s3_bucket.data,
             s3_prefix=form.s3_prefix.data,

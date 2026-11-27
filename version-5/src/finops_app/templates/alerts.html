@@ -40,7 +40,7 @@
                                 <strong>Email</strong>
                                 {% endif %}
                             </th>
-                            <td><code>{{ cfg.destination }}</code></td>
+                            <td><code>{{ mask_destination(cfg.destination, cfg.channel_type) }}</code></td>
                             <td>
                                 <ul style="list-style:none; padding-left:0; margin:0; font-size:0.875rem;">
                                     {% if cfg.notify_high_confidence %}<li>• High-confidence waste</li>{% endif %}

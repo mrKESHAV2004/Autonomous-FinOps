@@ -107,12 +107,13 @@ def rollback_version(session: Session, model_name: str) -> ModelVersion:
     if active is None:
         raise RegistryError(f"No active version found for model {model_name} to roll back from")
 
-    # Find the candidate previous version (ordered by created_at desc, excluding active)
+    # Find the candidate previous version (ordered by created_at desc, created before active version)
     previous = session.scalars(
         select(ModelVersion)
         .where(
             ModelVersion.model_name == model_name,
             ModelVersion.id != active.id,
+            ModelVersion.created_at < active.created_at,
         )
         .order_by(ModelVersion.created_at.desc())
     ).first()
