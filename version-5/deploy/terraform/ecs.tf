@@ -68,7 +68,6 @@ resource "aws_ecs_task_definition" "web" {
         { name = "FINOPS_STORAGE_BACKEND", value = "s3" },
         { name = "FINOPS_S3_BUCKET", value = aws_s3_bucket.storage.id },
         { name = "FINOPS_REDIS_URL", value = "redis://${aws_elasticache_cluster.redis.cache_nodes[0].address}:6379/0" },
-        { name = "FINOPS_DATABASE_URL", value = "postgresql+psycopg://${aws_db_instance.postgres.username}:${random_password.db_password.result}@${aws_db_instance.postgres.endpoint}/${aws_db_instance.postgres.db_name}" },
         { name = "FINOPS_AUTO_MIGRATE", value = "0" },
         { name = "FINOPS_LOG_JSON", value = "1" },
         { name = "FINOPS_TRUSTED_PROXIES", value = "1" },
@@ -78,6 +77,10 @@ resource "aws_ecs_task_definition" "web" {
         {
           name      = "FINOPS_SECRET_KEY"
           valueFrom = "${aws_secretsmanager_secret.app_secrets.arn}:FINOPS_SECRET_KEY::"
+        },
+        {
+          name      = "FINOPS_DATABASE_URL"
+          valueFrom = "${aws_secretsmanager_secret.app_secrets.arn}:FINOPS_DATABASE_URL::"
         }
       ]
       logConfiguration = {
@@ -148,7 +151,6 @@ resource "aws_ecs_task_definition" "worker" {
         { name = "FINOPS_STORAGE_BACKEND", value = "s3" },
         { name = "FINOPS_S3_BUCKET", value = aws_s3_bucket.storage.id },
         { name = "FINOPS_REDIS_URL", value = "redis://${aws_elasticache_cluster.redis.cache_nodes[0].address}:6379/0" },
-        { name = "FINOPS_DATABASE_URL", value = "postgresql+psycopg://${aws_db_instance.postgres.username}:${random_password.db_password.result}@${aws_db_instance.postgres.endpoint}/${aws_db_instance.postgres.db_name}" },
         { name = "FINOPS_LOG_JSON", value = "1" },
         { name = "FINOPS_SENTRY_DSN", value = var.sentry_dsn }
       ]
@@ -156,6 +158,10 @@ resource "aws_ecs_task_definition" "worker" {
         {
           name      = "FINOPS_SECRET_KEY"
           valueFrom = "${aws_secretsmanager_secret.app_secrets.arn}:FINOPS_SECRET_KEY::"
+        },
+        {
+          name      = "FINOPS_DATABASE_URL"
+          valueFrom = "${aws_secretsmanager_secret.app_secrets.arn}:FINOPS_DATABASE_URL::"
         }
       ]
       logConfiguration = {

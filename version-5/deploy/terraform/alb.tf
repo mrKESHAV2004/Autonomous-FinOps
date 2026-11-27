@@ -40,9 +40,25 @@ resource "aws_lb_listener" "http" {
   port              = 80
   protocol          = "HTTP"
 
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.web.arn
+  dynamic "default_action" {
+    for_each = var.certificate_arn != "" ? [1] : []
+    content {
+      type = "redirect"
+
+      redirect {
+        port        = "443"
+        protocol    = "HTTPS"
+        status_code = "HTTP_301"
+      }
+    }
+  }
+
+  dynamic "default_action" {
+    for_each = var.certificate_arn == "" ? [1] : []
+    content {
+      type             = "forward"
+      target_group_arn = aws_lb_target_group.web.arn
+    }
   }
 }
 

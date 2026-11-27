@@ -20,7 +20,8 @@ resource "aws_secretsmanager_secret" "app_secrets" {
 resource "aws_secretsmanager_secret_version" "app_secrets_version" {
   secret_id = aws_secretsmanager_secret.app_secrets.id
   secret_string = jsonencode({
-    FINOPS_SECRET_KEY = random_password.secret_key.result
-    DB_PASSWORD       = random_password.db_password.result
+    FINOPS_SECRET_KEY   = random_password.secret_key.result
+    DB_PASSWORD         = random_password.db_password.result
+    FINOPS_DATABASE_URL = "postgresql+psycopg://${aws_db_instance.postgres.username}:${random_password.db_password.result}@${aws_db_instance.postgres.endpoint}/${aws_db_instance.postgres.db_name}"
   })
 }

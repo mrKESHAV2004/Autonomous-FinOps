@@ -1,3 +1,5 @@
+data "aws_caller_identity" "current" {}
+
 resource "aws_iam_role" "ecs_execution_role" {
   name = "finops-${var.environment}-ecs-execution-role"
 
@@ -89,6 +91,19 @@ resource "aws_iam_policy" "ecs_task_policy" {
           "sts:AssumeRole"
         ]
         Resource = "*"
+        Condition = {
+          StringNotEquals = {
+            "aws:ResourceAccount" = data.aws_caller_identity.current.account_id
+          }
+        }
+      },
+      {
+        Sid    = "DenyAssumeOwnAccountRoles"
+        Effect = "Deny"
+        Action = [
+          "sts:AssumeRole"
+        ]
+        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:*"
       },
       {
         Sid    = "SendEmailAlerts"
