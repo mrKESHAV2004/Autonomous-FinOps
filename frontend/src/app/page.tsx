@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { ForecastPanel } from "@/components/dashboard/SpendForecastChart";
 import "./landing.css";
 
 export const metadata: Metadata = {
@@ -139,15 +140,7 @@ export default function Landing() {
               </p>
             </div>
             <figure className="showcase-figure">
-              <div className="capture">
-                <Image
-                  src="/screens/forecast-chart.png"
-                  width={2784}
-                  height={1024}
-                  sizes="(min-width: 90rem) 1312px, 92vw"
-                  alt="Spend forecast: actual spend through today, then the business-as-usual baseline rising and the optimized run-rate falling."
-                />
-              </div>
+              <ForecastPanel headingId="landing-forecast-heading" headingLevel="h3" />
               <figcaption className="caption">
                 The baseline is a 7-day moving average or a weekly-seasonal model, whichever backtests better on the last week. Sample data.
               </figcaption>

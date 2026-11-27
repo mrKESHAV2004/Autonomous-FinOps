@@ -82,11 +82,129 @@ function Swatch({ tone, dashed }: { tone: string; dashed?: boolean }) {
   return <span aria-hidden="true" className={`swatch ${dashed ? "swatch--dashed" : ""} ${tone}`} />;
 }
 
-export function SpendForecastView() {
+type ForecastPanelProps = {
+  /** Id for the panel's heading; must be unique on the page. */
+  headingId?: string;
+  /** Heading level, so the panel nests correctly under the page's own heads. */
+  headingLevel?: "h2" | "h3";
+};
+
+/** The spend forecast with its horizon switch (30, 60 or 90 days past today). */
+export function ForecastPanel({ headingId = "forecast-heading", headingLevel = "h2" }: ForecastPanelProps) {
   const [timeframe, setTimeframe] = useState<Timeframe>("30d");
   const series = forecastSeries(timeframe);
   const last = series[series.length - 1];
+  const Heading = headingLevel;
 
+  return (
+    <section aria-labelledby={headingId} className="panel flex flex-col gap-6 p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <Heading id={headingId} className="text-lg">
+            Spend trajectory & forecast horizon
+          </Heading>
+          <p className="max-w-[60ch] text-sm text-muted">
+            Historical actual billing compared against statistical baseline and post-triage optimized trajectories.
+          </p>
+        </div>
+
+        <div className="seg" role="group" aria-label="Forecast horizon">
+          {(["30d", "60d", "90d"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              aria-pressed={timeframe === t}
+              onClick={() => setTimeframe(t)}
+              className="measured"
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <ul className="m-0 flex list-none flex-wrap gap-x-6 gap-y-2 p-0 text-sm text-ink-2">
+        {SERIES.map((s) => (
+          <li key={s.key} className="flex items-center gap-2">
+            <Swatch tone={s.swatch} dashed={s.dashed} />
+            {s.name}
+          </li>
+        ))}
+      </ul>
+
+      <div
+        className="forecast-chart h-80 w-full"
+        role="img"
+        aria-label={`Line chart of actual spend through ${TODAY}, then the BAU baseline rising to $${last.baseline.toLocaleString()} and the optimized run-rate falling to $${last.optimized.toLocaleString()} by ${last.date}.`}
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={series} margin={{ top: 16, right: 24, left: 0, bottom: 0 }}>
+            <CartesianGrid stroke="currentColor" vertical={false} />
+            <XAxis dataKey="date" stroke="currentColor" tickLine={false} axisLine tickMargin={8} />
+            <YAxis
+              stroke="currentColor"
+              tickLine={false}
+              axisLine={false}
+              width={64}
+              tickFormatter={(val: number) => `$${val.toLocaleString()}`}
+            />
+            <ReferenceLine x={TODAY} stroke="currentColor" label={{ value: "Today", position: "insideTopRight" }} />
+            <Tooltip
+              cursor={{ stroke: "currentColor" }}
+              content={({ active, payload, label }) => {
+                if (!active || !payload || payload.length === 0) return null;
+                return (
+                  <div className="panel flex min-w-56 flex-col gap-1 bg-paper-3 p-3 text-xs">
+                    <div className="measured text-muted">{label}</div>
+                    {payload.map((entry) => (
+                      <div key={String(entry.dataKey)} className="flex items-center justify-between gap-4">
+                        <span className="text-ink-2">{SERIES_NAMES[String(entry.dataKey)]}</span>
+                        <span className="measured text-ink">${Number(entry.value).toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              }}
+            />
+            <Line
+              className="series-baseline"
+              type="monotone"
+              dataKey="baseline"
+              name="BAU Baseline (Unoptimized)"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeDasharray="4 4"
+              dot={false}
+              isAnimationActive={false}
+            />
+            <Line
+              className="series-optimized"
+              type="monotone"
+              dataKey="optimized"
+              name="Optimized Run-rate"
+              stroke="currentColor"
+              strokeWidth={2}
+              dot={false}
+              isAnimationActive={false}
+            />
+            <Line
+              className="series-actual"
+              type="monotone"
+              dataKey="actual"
+              name="Actual Spend"
+              stroke="currentColor"
+              strokeWidth={2}
+              dot={{ r: 3 }}
+              isAnimationActive={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </section>
+  );
+}
+
+export function SpendForecastView() {
   return (
     <div className="flex flex-col gap-6">
       {/* The reading: what the detectors flagged, set large; the run-rates beside it. */}
@@ -141,111 +259,7 @@ export function SpendForecastView() {
         </dl>
       </section>
 
-      {/* The forecast. */}
-      <section aria-labelledby="forecast-heading" className="panel flex flex-col gap-6 p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex flex-col gap-1">
-            <h2 id="forecast-heading" className="text-lg">
-              Spend trajectory & forecast horizon
-            </h2>
-            <p className="max-w-[60ch] text-sm text-muted">
-              Historical actual billing compared against statistical baseline and post-triage optimized trajectories.
-            </p>
-          </div>
-
-          <div className="seg" role="group" aria-label="Forecast horizon">
-            {(["30d", "60d", "90d"] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                aria-pressed={timeframe === t}
-                onClick={() => setTimeframe(t)}
-                className="measured"
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <ul className="m-0 flex list-none flex-wrap gap-x-6 gap-y-2 p-0 text-sm text-ink-2">
-          {SERIES.map((s) => (
-            <li key={s.key} className="flex items-center gap-2">
-              <Swatch tone={s.swatch} dashed={s.dashed} />
-              {s.name}
-            </li>
-          ))}
-        </ul>
-
-        <div
-          className="forecast-chart h-80 w-full"
-          role="img"
-          aria-label={`Line chart of actual spend through ${TODAY}, then the BAU baseline rising to $${last.baseline.toLocaleString()} and the optimized run-rate falling to $${last.optimized.toLocaleString()} by ${last.date}.`}
-        >
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={series} margin={{ top: 16, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid stroke="currentColor" vertical={false} />
-              <XAxis dataKey="date" stroke="currentColor" tickLine={false} axisLine tickMargin={8} />
-              <YAxis
-                stroke="currentColor"
-                tickLine={false}
-                axisLine={false}
-                width={64}
-                tickFormatter={(val: number) => `$${val.toLocaleString()}`}
-              />
-              <ReferenceLine x={TODAY} stroke="currentColor" label={{ value: "Today", position: "insideTopRight" }} />
-              <Tooltip
-                cursor={{ stroke: "currentColor" }}
-                content={({ active, payload, label }) => {
-                  if (!active || !payload || payload.length === 0) return null;
-                  return (
-                    <div className="panel flex min-w-56 flex-col gap-1 bg-paper-3 p-3 text-xs">
-                      <div className="measured text-muted">{label}</div>
-                      {payload.map((entry) => (
-                        <div key={String(entry.dataKey)} className="flex items-center justify-between gap-4">
-                          <span className="text-ink-2">{SERIES_NAMES[String(entry.dataKey)]}</span>
-                          <span className="measured text-ink">${Number(entry.value).toLocaleString()}</span>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                }}
-              />
-              <Line
-                className="series-baseline"
-                type="monotone"
-                dataKey="baseline"
-                name="BAU Baseline (Unoptimized)"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeDasharray="4 4"
-                dot={false}
-                isAnimationActive={false}
-              />
-              <Line
-                className="series-optimized"
-                type="monotone"
-                dataKey="optimized"
-                name="Optimized Run-rate"
-                stroke="currentColor"
-                strokeWidth={2}
-                dot={false}
-                isAnimationActive={false}
-              />
-              <Line
-                className="series-actual"
-                type="monotone"
-                dataKey="actual"
-                name="Actual Spend"
-                stroke="currentColor"
-                strokeWidth={2}
-                dot={{ r: 3 }}
-                isAnimationActive={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </section>
+      <ForecastPanel />
 
       {/* Waste by service: five values compared, as horizontal bars in a table. */}
       <section aria-labelledby="service-heading" className="panel overflow-hidden">

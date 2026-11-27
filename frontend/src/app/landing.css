@@ -124,3 +124,6 @@
 @media (prefers-reduced-motion: reduce) {
   .slab-links a, .text-link { transition: none; }
 }
+
+/* The live forecast panel keeps the console's sizes inside the landing page. */
+.site .panel :is(h2, h3) { font-size: var(--text-lg); }
